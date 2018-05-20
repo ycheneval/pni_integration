@@ -30,7 +30,7 @@ class PniServicesController {
   public function album(Request $request, Application $app) {
 //    $ph = new PniHelper($request, $app);
     $wd = new Watchdog($app);
-    $wd->watchdog('warning', 'Here is our request object @r', ['@r' => print_r($request, TRUE)]);
+    $wd->watchdog('warning', 'Here is our request object @r', ['@r' => print_r($_POST, TRUE)]);
     $app['monolog']->addWarning("This is a test!", (array)$request);
     $message = [
       'response_type' => 'ephemeral',
