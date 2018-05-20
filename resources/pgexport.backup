@@ -1,0 +1,122 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 9.3.5
+-- Dumped by pg_dump version 9.3.1
+-- Started on 2015-02-23 18:20:41
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+
+--
+-- TOC entry 8 (class 2615 OID 16605)
+-- Name: toplink; Type: SCHEMA; Schema: -; Owner: ue6lindbc6iam1
+--
+
+CREATE SCHEMA toplink;
+
+
+ALTER SCHEMA toplink OWNER TO ue6lindbc6iam1;
+
+SET search_path = toplink, pg_catalog;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- TOC entry 196 (class 1259 OID 16607)
+-- Name: access; Type: TABLE; Schema: toplink; Owner: ue6lindbc6iam1; Tablespace: 
+--
+
+CREATE TABLE access (
+    login character varying(16) NOT NULL,
+    password character varying(1024) NOT NULL,
+    roles character varying(256),
+    active boolean,
+    id_user integer NOT NULL
+);
+
+
+ALTER TABLE toplink.access OWNER TO ue6lindbc6iam1;
+
+--
+-- TOC entry 197 (class 1259 OID 16616)
+-- Name: users_id_user_seq; Type: SEQUENCE; Schema: toplink; Owner: ue6lindbc6iam1
+--
+
+CREATE SEQUENCE users_id_user_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE toplink.users_id_user_seq OWNER TO ue6lindbc6iam1;
+
+--
+-- TOC entry 2907 (class 0 OID 0)
+-- Dependencies: 197
+-- Name: users_id_user_seq; Type: SEQUENCE OWNED BY; Schema: toplink; Owner: ue6lindbc6iam1
+--
+
+ALTER SEQUENCE users_id_user_seq OWNED BY access.id_user;
+
+
+--
+-- TOC entry 2789 (class 2604 OID 16618)
+-- Name: id_user; Type: DEFAULT; Schema: toplink; Owner: ue6lindbc6iam1
+--
+
+ALTER TABLE ONLY access ALTER COLUMN id_user SET DEFAULT nextval('users_id_user_seq'::regclass);
+
+
+--
+-- TOC entry 2901 (class 0 OID 16607)
+-- Dependencies: 196
+-- Data for Name: access; Type: TABLE DATA; Schema: toplink; Owner: ue6lindbc6iam1
+--
+
+COPY access (login, password, roles, active, id_user) FROM stdin;
+admin	5FZ2Z8QIkA7UTZ4BYkoC+GsReLf569mSKDsfods6LYQ8t+a8EW9oaircfMpmaLbPBh4FOBiiFyLfuZmTSUwzZg==	ROLE_ADMIN	t	1
+\.
+
+
+--
+-- TOC entry 2908 (class 0 OID 0)
+-- Dependencies: 197
+-- Name: users_id_user_seq; Type: SEQUENCE SET; Schema: toplink; Owner: ue6lindbc6iam1
+--
+
+SELECT pg_catalog.setval('users_id_user_seq', 1, true);
+
+
+--
+-- TOC entry 2792 (class 2606 OID 16614)
+-- Name: users_login_key; Type: CONSTRAINT; Schema: toplink; Owner: ue6lindbc6iam1; Tablespace: 
+--
+
+ALTER TABLE ONLY access
+    ADD CONSTRAINT users_login_key UNIQUE (login);
+
+
+--
+-- TOC entry 2790 (class 1259 OID 16626)
+-- Name: access_id_user_idx; Type: INDEX; Schema: toplink; Owner: ue6lindbc6iam1; Tablespace: 
+--
+
+CREATE INDEX access_id_user_idx ON access USING btree (id_user);
+
+
+-- Completed on 2015-02-23 18:20:50
+
+--
+-- PostgreSQL database dump complete
+--
+

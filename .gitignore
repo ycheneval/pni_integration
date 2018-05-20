@@ -1,0 +1,4 @@
+vendor/
+.env
+app/local.settings.php
+/nbproject/
