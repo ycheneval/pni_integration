@@ -29,7 +29,7 @@ class PniServicesController {
 
   public function album(Request $request, Application $app) {
 //    $ph = new PniHelper($request, $app);
-    $app['monolog']->addWarning("This is a test!", $request);
+    $app['monolog']->addWarning("This is a test!", (array)$request);
     $message = [
       'response_type' => 'ephemeral',
       'text' => "A new album has been setup:",
