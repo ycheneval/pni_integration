@@ -83,7 +83,7 @@ $app['db']->exec('SET search_path = ' . $_ENV['APP_SCHEMA'] . ', public;');
 
 
 $app->register(new Wef\AccessProvider());
-$app->register(new Wef\SalesforceProvider());
+//$app->register(new Wef\SalesforceProvider());
 
 $app->register(new Silex\Provider\SecurityServiceProvider(), array(
   'security.firewalls' => array(
