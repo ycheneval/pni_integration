@@ -546,7 +546,7 @@ class PniHelper {
           $input_stickers = $this->decodeStickers($all_stickers, $s_arr_value);
           $key = ($exclude_following ? 'to_remove' : 'to_add');
           $this->wd->watchdog('got', 'Default case, operation @k, decoded stickers: @s', ['@k' => $key, '@s' => $input_stickers]);
-          $stickers_operations[] = [$key => input_stickers];
+          $stickers_operations[] = [$key => $input_stickers];
           break;
       }
     }
@@ -556,7 +556,7 @@ class PniHelper {
     // in to_add or to_remove
     if (!empty($stickers_operations)) {
       foreach ($stickers_operations as $a_sticker_operation) {
-        $query = "UPDATE player_sticker SET owned = " . (key($a_sticker_operation) == 'to_add' ? "TRUE" : "FALSE") . " WHERE sticker_id IN (" . \implode(',', $a_sticker_operation[key($a_sticker_operation)]) . ")"
+        $query = "UPDATE player_sticker SET owned = " . (key($a_sticker_operation) == 'to_add' ? "TRUE" : "FALSE") . " WHERE sticker_id IN (" . \implode(',', current($a_sticker_operation)) . ")"
           . " AND player_id = " . $this->db()->quote($player_id);
         $this->wd->watchdog('got', 'Query to execute: @q', ['@q' => $query]);
         $result = $this->db()->exec($query);
