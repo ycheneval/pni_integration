@@ -166,7 +166,7 @@ class PniHelper {
                 st.url
             FROM " . $this->__schema . ".sticker st
             WHERE "
-            . ($use_like ? "st.ident LIKE '%" . $ref . "%'" : "st.ident = " . $this->db()->quote($ref))
+            . ($use_like ? "st.ident ILIKE '%" . $ref . "%'" : "st.ident = " . $this->db()->quote($ref))
             . " AND st.album_id = " . $this->db()->quote($album_id);
     $stickers = $this->db()->getRow($query);
     if ($stickers) {
@@ -190,7 +190,7 @@ class PniHelper {
                 st.team_album_id,
                 st.url
             FROM " . $this->__schema . ".sticker st
-            WHERE st.name LIKE '%" . $ref . "%'"
+            WHERE st.name ILIKE '%" . $ref . "%'"
             . " AND st.album_id = " . $this->db()->quote($album_id);
     $stickers = $this->db()->getRow($query);
     if ($stickers) {
@@ -216,7 +216,7 @@ class PniHelper {
             FROM " . $this->__schema . ".sticker st "
             . " INNER JOIN " . $this->__schema . ".team_album ta ON st.team_album_id = ta.id"
             . " INNER JOIN " . $this->__schema . ".team te ON ta.team_id = te.id"
-            . " WHERE te.name LIKE '%" . $ref . "%'"
+            . " WHERE te.name ILIKE '%" . $ref . "%'"
             . " AND st.album_id = " . $this->db()->quote($album_id);
     $this->wd->watchdog('getStickerByTeam', 'Query @q', ['@q' => $query]);
     $stickers = $this->db()->getCollection($query);
@@ -246,12 +246,13 @@ class PniHelper {
       // Ok so in this case, it's a bit more complicated
       // Either we have a string ident (c1, c4), or a player name (Pogba) or
       // a team name (France). Try ident first, then name, then team
+      $this->wd->watchdog('findStickerByRef', 'Trying to find sticker by ident for : @r', ['@r' => $ref]);
       $stickers = $this->getStickerByIdent($album_id, $ref, TRUE);
       if (empty($stickers)) {
-        $this->wd->watchdog('findStickerByRef', 'Trying to find sticker name for : @n', ['@b' => $ref]);
+        $this->wd->watchdog('findStickerByRef', 'Trying to find sticker name for : @r', ['@r' => $ref]);
         $stickers = $this->getStickerByName($album_id, $ref);
         if (empty($stickers)) {
-          $this->wd->watchdog('findStickerByRef', 'Trying to find sticker by team for : @n', ['@b' => $ref]);
+          $this->wd->watchdog('findStickerByRef', 'Trying to find sticker by team for : @r', ['@r' => $ref]);
           $stickers = $this->getStickerByTeam($album_id, $ref);
         }
       }
