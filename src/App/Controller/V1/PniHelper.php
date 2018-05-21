@@ -548,7 +548,7 @@ class PniHelper {
           $this->wd->watchdog('got', 'Default case, trying to find stickers for: @s', ['@s' => $s_arr_value]);
           $input_stickers = $this->decodeStickers($all_stickers, $s_arr_value);
           $key = ($exclude_following ? 'to_remove' : 'to_add');
-          $this->wd->watchdog('got', 'Default case, operation @k, decoded stickers: @s', ['@k' => $key, '@s' => $input_stickers]);
+          $this->wd->watchdog('got', 'Default case, operation @k, decoded stickers: @s', ['@k' => $key, '@s' => print_r($input_stickers, TRUE)]);
           $stickers_operations[] = [$key => $input_stickers];
           break;
       }
