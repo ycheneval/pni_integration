@@ -513,10 +513,7 @@ class PniHelper {
 //      }
 
     // Setup some variables
-    $result_stickers = [
-      'to_add' => [],
-      'to_remove' => [],
-    ];
+    $stickers_operations = [];
 
     //Handling missing and got in the same routine
     if ($reverse) {
@@ -532,9 +529,9 @@ class PniHelper {
       switch ($s_arr_value) {
         case 'all':
           // We are talking about all stickers, add them all to $result_stickers
-          $result_stickers[$add_op] = array_map(function ($a_sticker) {
+          $stickers_operations[] = [$add_op => array_map(function ($a_sticker) {
             return $a_sticker['id'];
-          }, $all_stickers['payload']);
+          }, $all_stickers['payload'])];
           break;
 
         case 'but':
@@ -549,9 +546,7 @@ class PniHelper {
           $input_stickers = $this->decodeStickers($all_stickers, $s_arr_value);
           $key = ($exclude_following ? 'to_remove' : 'to_add');
           $this->wd->watchdog('got', 'Default case, operation @k, decoded stickers: @s', ['@k' => $key, '@s' => $input_stickers]);
-          foreach ($input_stickers as $an_input_sticker) {
-            $result_stickers[$key][] = $an_input_sticker;
-          }
+          $stickers_operations[] = [$key => input_stickers];
           break;
       }
     }
@@ -559,19 +554,25 @@ class PniHelper {
 
     // Now we should have in $result_stickers the list of things to do
     // in to_add or to_remove
-    if (!empty($result_stickers)) {
-      if (!empty($result_stickers['to_add'])) {
-        $query = "UPDATE player_sticker SET owned = TRUE WHERE sticker_id IN (" . \implode(',', $result_stickers['to_add']) . ')'
-          . ' AND player_id = ' . $this->db()->quote($player_id);
-        $this->wd->watchdog('got', 'Add Query to execute: @q', ['@q' => $query]);
+    if (!empty($stickers_operations)) {
+      foreach ($stickers_operations as $a_sticker_operation) {
+        $query = "UPDATE player_sticker SET owned = " . (key($a_sticker_operation) == 'to_add' ? "TRUE" : "FALSE") . " WHERE sticker_id IN (" . \implode(',', current($a_sticker_operation)) . ")"
+          . " AND player_id = " . $this->db()->quote($player_id);
+        $this->wd->watchdog('got', 'Query to execute: @q', ['@q' => $query]);
         $result = $this->db()->exec($query);
       }
-      if (!empty($result_stickers['to_remove'])) {
-        $query = "UPDATE player_sticker SET owned = FALSE WHERE sticker_id IN (" . \implode(',', $result_stickers['to_remove']) . ')'
-          . ' AND player_id = ' . $this->db()->quote($player_id);
-        $this->wd->watchdog('got', 'Remove Query to execute: @q', ['@q' => $query]);
-        $result = $this->db()->exec($query);
-      }
+//      if (!empty($result_stickers['to_add'])) {
+//        $query = "UPDATE player_sticker SET owned = " .  WHERE sticker_id IN (" . \implode(',', $result_stickers['to_add']) . ')'
+//          . ' AND player_id = ' . $this->db()->quote($player_id);
+//        $this->wd->watchdog('got', 'Add Query to execute: @q', ['@q' => $query]);
+//        $result = $this->db()->exec($query);
+//      }
+//      if (!empty($result_stickers['to_remove'])) {
+//        $query = "UPDATE player_sticker SET owned = FALSE WHERE sticker_id IN (" . \implode(',', $result_stickers['to_remove']) . ')'
+//          . ' AND player_id = ' . $this->db()->quote($player_id);
+//        $this->wd->watchdog('got', 'Remove Query to execute: @q', ['@q' => $query]);
+//        $result = $this->db()->exec($query);
+//      }
       return [
         'success' => TRUE,
         'msg' => 'Stickers have been processed and added (or removed) from your album',
