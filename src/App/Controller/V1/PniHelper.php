@@ -218,6 +218,7 @@ class PniHelper {
             . " INNER JOIN " . $this->__schema . ".team te ON ta.team_id = te.id"
             . " WHERE te.name LIKE '%" . $ref . "%'"
             . " AND st.album_id = " . $this->db()->quote($album_id);
+    $this->wd->watchdog('getStickerByTeam', 'Query @q', ['@q' => $query]);
     $stickers = $this->db()->getCollection($query);
     if ($stickers) {
       foreach ($stickers as $a_sticker) {
@@ -247,8 +248,10 @@ class PniHelper {
       // a team name (France). Try ident first, then name, then team
       $stickers = $this->getStickerByIdent($album_id, $ref, TRUE);
       if (empty($stickers)) {
+        $this->wd->watchdog('findStickerByRef', 'Trying to find sticker name for : @n', ['@b' => $ref]);
         $stickers = $this->getStickerByName($album_id, $ref);
         if (empty($stickers)) {
+          $this->wd->watchdog('findStickerByRef', 'Trying to find sticker by team for : @n', ['@b' => $ref]);
           $stickers = $this->getStickerByTeam($album_id, $ref);
         }
       }
@@ -284,7 +287,7 @@ class PniHelper {
       else {
         // No dashes
         $result = array_merge($result, $this->findStickerByRef($album_id, $a_sticker_block));
-        $this->wd->watchdog('decodeStickers', 'No block: @b, found stick', ['@b' => $a_sticker_block]);
+        $this->wd->watchdog('decodeStickers', 'No block: @b, found sticker @r', ['@b' => $a_sticker_block, '@r' => print_r($result, TRUE)]);
 //        foreach ($unref_stickers as $an_unref_sticker) {
 //          $result[] = $an_unref_sticker;
 //        }
