@@ -276,7 +276,7 @@ class PniHelper {
     $this->wd->watchdog('decodeStickers', 'Sticker blocks @b', ['@b' => print_r($sticker_blocks, TRUE)]);
     foreach ($sticker_blocks as $a_sticker_block) {
       // Do we have dashes ?
-      if (empty($a_sticker_block)) {
+      if (0 == strlen($a_sticker_block)) {
         continue;
       }
       $dashes_block = \explode('-', $a_sticker_block);
