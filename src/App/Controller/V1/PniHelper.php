@@ -268,10 +268,12 @@ class PniHelper {
 
     // First, split by ,
     $sticker_blocks = \explode(',', $stickers_input);
+    $this->wd->watchdog('decodeStickers', 'Sticker blocks @b', ['@b' => print_r($sticker_blocks, TRUE)]);
     foreach ($sticker_blocks as $a_sticker_block) {
       // Do we have dashes ?
       $dashes_block = \explode('-', $a_sticker_block);
       if ($dashes_block) {
+        $this->wd->watchdog('decodeStickers', 'Block found: @b', ['@b' => print_r($dashes_block, TRUE)]);
         // We do have a dash, so enumerate from start to finish
         for ($i=$dashes_block[0]; $i <= $dashes_block[1]; $i++) {
           // No need of foreach as this will return a single sticker for sure
@@ -280,6 +282,7 @@ class PniHelper {
       }
       else {
         // No dashes
+        $this->wd->watchdog('decodeStickers', 'No block: @b', ['@b' => $a_sticker_block]);
         $result = array_merge($result, $this->findStickerByRef($album_id, $a_sticker_block));
 //        foreach ($unref_stickers as $an_unref_sticker) {
 //          $result[] = $an_unref_sticker;
@@ -527,10 +530,10 @@ class PniHelper {
 
         default:
           // Ok so this is the list of stickers. Find'em all!
-          $this->wd->watchdog('got', 'Default case, trying to find stickers for: @s', ['@c' => $s_arr_value]);
+          $this->wd->watchdog('got', 'Default case, trying to find stickers for: @s', ['@s' => $s_arr_value]);
           $input_stickers = $this->decodeStickers($all_stickers, $s_arr_value);
           $key = ($exclude_following ? 'to_remove' : 'to_add');
-          $this->wd->watchdog('got', 'Default case, operation @k, decoded stickers: @s', ['@k' => $key, '@c' => $input_stickers]);
+          $this->wd->watchdog('got', 'Default case, operation @k, decoded stickers: @s', ['@k' => $key, '@s' => $input_stickers]);
           foreach ($input_stickers as $an_input_sticker) {
             $result_stickers[$key][] = $an_input_sticker;
           }
@@ -538,7 +541,7 @@ class PniHelper {
       }
     }
     $this->wd->watchdog('got', 'Found result_stickers: @rs', ['@rs' => print_r($result_stickers, TRUE)]);
-    
+
     // Now we should have in $result_stickers the list of things to do
     // in to_add or to_remove
     if (!empty($result_stickers)) {
