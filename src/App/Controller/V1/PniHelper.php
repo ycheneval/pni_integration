@@ -525,8 +525,10 @@ class PniHelper {
 
         default:
           // Ok so this is the list of stickers. Find'em all!
+          $this->wd->watchdog('got', 'Default case, trying to find stickers for: @s', ['@c' => $s_arr_value]);
           $input_stickers = $this->decodeStickers($all_stickers, $s_arr_value);
           $key = ($exclude_following ? 'to_remove' : 'to_add');
+          $this->wd->watchdog('got', 'Default case, operation @k, decoded stickers: @s', ['@k' => $key, '@c' => $input_stickers]);
           foreach ($input_stickers as $an_input_sticker) {
             $result_stickers[$key][] = $an_input_sticker;
           }
@@ -540,13 +542,13 @@ class PniHelper {
         if (!empty($result_stickers['to_add'])) {
           $query = "UPDATE player_sticker SET owned = TRUE WHERE sticker_id IN (" . \implode(',', $result_stickers['to_add']) . ')'
             . ' AND player_id = ' . $this->db()->quote($player_id);
-          $this->wd->watchdog('got', 'Query to execute: @q', ['@q' => $query]);
+          $this->wd->watchdog('got', 'Add Query to execute: @q', ['@q' => $query]);
           $result = $this->db()->exec($query);
         }
         if (!empty($result_stickers['to_remove'])) {
           $query = "UPDATE player_sticker SET owned = FALSE WHERE sticker_id IN (" . \implode(',', $result_stickers['to_remove']) . ')'
             . ' AND player_id = ' . $this->db()->quote($player_id);
-          $this->wd->watchdog('got', 'Query to execute: @q', ['@q' => $query]);
+          $this->wd->watchdog('got', 'Remove Query to execute: @q', ['@q' => $query]);
           $result = $this->db()->exec($query);
         }
       }
