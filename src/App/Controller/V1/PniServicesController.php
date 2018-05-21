@@ -105,11 +105,19 @@ class PniServicesController {
     }
     $wd->watchdog('notice', 'Origin checked');
 
-    $message = [
-      'response_type' => 'ephemeral',
-      'text' => "A new missing has been setup:",
-    ];
-    return $app->json($message);
+    $player_data = $ph->getSlackPlayer($ph->input->user_id);
+    if ($player_data['success']) {
+      $result = $ph->got($player_data['payload']['id'], $player_data['payload']['current_album_id'], $ph->input->text, TRUE);
+      if ($result['success']) {
+        $message = [
+          'response_type' => 'ephemeral',
+          'text' => "A new missing has been setup",
+          'attachments' => $result['slack_attachments']
+        ];
+        return $app->json($message);
+      }
+    }
+    return $app->json($this->error_msg);
   }
 
   public function stats(Request $request, Application $app) {

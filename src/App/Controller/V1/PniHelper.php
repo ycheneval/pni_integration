@@ -246,13 +246,13 @@ class PniHelper {
       // Ok so in this case, it's a bit more complicated
       // Either we have a string ident (c1, c4), or a player name (Pogba) or
       // a team name (France). Try ident first, then name, then team
-      $this->wd->watchdog('findStickerByRef', 'Trying to find sticker by ident for : @r', ['@r' => $ref]);
+      $this->wd->watchdog('findStickerByRef', 'Trying to find sticker by ident for: @r', ['@r' => $ref]);
       $stickers = $this->getStickerByIdent($album_id, $ref, TRUE);
       if (empty($stickers)) {
-        $this->wd->watchdog('findStickerByRef', 'Trying to find sticker name for : @r', ['@r' => $ref]);
+        $this->wd->watchdog('findStickerByRef', 'Trying to find sticker name for: @r', ['@r' => $ref]);
         $stickers = $this->getStickerByName($album_id, $ref);
         if (empty($stickers)) {
-          $this->wd->watchdog('findStickerByRef', 'Trying to find sticker by team for : @r', ['@r' => $ref]);
+          $this->wd->watchdog('findStickerByRef', 'Trying to find sticker by team for: @r', ['@r' => $ref]);
           $stickers = $this->getStickerByTeam($album_id, $ref);
         }
       }
@@ -493,7 +493,7 @@ class PniHelper {
    * Indicated which stickers you already got
    *
    */
-  public function got($player_id, $album_id, $stickers) {
+  public function got($player_id, $album_id, $stickers, $reverse = FALSE) {
     $this->wd->watchdog('got', 'Trying to process @t for album @a and player @p', ['@t' => $stickers, '@a' => $album_id, '@p' => $player_id]);
     $all_stickers = $this->getStickersByAlbum($album_id);
     if (!$all_stickers['success']) {
@@ -517,12 +517,22 @@ class PniHelper {
       'to_add' => [],
       'to_remove' => [],
     ];
-    $exclude_following = FALSE;
+
+    //Handling missing and got in the same routine
+    if ($reverse) {
+      $add_op = 'to_remove';
+      $remove_op = 'to_add';
+    }
+    else {
+      $add_op = 'to_add';
+      $remove_op = 'to_remove';
+    }
+    $exclude_following = ($reverse ? TRUE : FALSE);
     foreach ($s_array as $s_arr_value) {
       switch ($s_arr_value) {
         case 'all':
           // We are talking about all stickers, add them all to $result_stickers
-          $result_stickers['to_add'] = array_map(function ($a_sticker) {
+          $result_stickers[$add_op] = array_map(function ($a_sticker) {
             return $a_sticker['id'];
           }, $all_stickers['payload']);
           break;
@@ -530,7 +540,7 @@ class PniHelper {
         case 'but':
         case 'except':
           // to handle /got all but 3-4
-          $exclude_following = TRUE;
+          $exclude_following = ($reverse ? FALSE : TRUE);
           break;
 
         default:
