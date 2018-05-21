@@ -50,7 +50,7 @@ class PniHelper {
     $this->input->user_name = $_POST['user_name'];
     $this->input->command = $_POST['command'];
     $this->input->text = $_POST['text'];
-    $this->input->params = \split(' ', $this->input->text);
+    $this->input->params = \explode(' ', $this->input->text);
     $this->input->response_url = $_POST['response_url'];
     $this->input->trigger_id = $_POST['trigger_id'];
     $this->input->client_type = $this->CLIENT_TYPE;
