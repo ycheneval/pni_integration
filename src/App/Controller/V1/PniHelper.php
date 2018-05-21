@@ -494,6 +494,7 @@ class PniHelper {
         'error_message' => 'We cannot find stickers for this album!',
       ];
     }
+    $this->wd->watchdog('got', 'All Stickers found: @c', ['@q' => count($all_stickers['payload'])]);
 
     // First split the $stickers
     $s_array = \explode(' ', $stickers);
@@ -522,10 +523,11 @@ class PniHelper {
           $input_stickers = $this->decodeStickers($all_stickers, $s_arr_value);
           $key = ($exclude_following ? 'to_remove' : 'to_add');
           foreach ($input_stickers as $an_input_sticker) {
-            $results_stickers[$key][] = $an_input_sticker;
+            $result_stickers[$key][] = $an_input_sticker;
           }
           break;
       }
+      $this->wd->watchdog('got', 'Found result_stickers: @rs', ['@rs' => print_r($result_stickers, TRUE)]);
 
       // Now we should have in $result_stickers the list of things to do
       // in to_add or to_remove
@@ -533,11 +535,13 @@ class PniHelper {
         if (!empty($result_stickers['to_add'])) {
           $query = "UPDATE player_sticker SET owned = TRUE WHERE sticker_id IN (" . \implode(',', $result_stickers['to_add']) . ')'
             . ' AND player_id = ' . $this->db()->quote($player_id);
+          $this->wd->watchdog('got', 'Query to execute: @q', ['@q' => $query]);
           $result = $this->db()->exec($query);
         }
         if (!empty($result_stickers['to_remove'])) {
           $query = "UPDATE player_sticker SET owned = FALSE WHERE sticker_id IN (" . \implode(',', $result_stickers['to_remove']) . ')'
             . ' AND player_id = ' . $this->db()->quote($player_id);
+          $this->wd->watchdog('got', 'Query to execute: @q', ['@q' => $query]);
           $result = $this->db()->exec($query);
         }
       }
