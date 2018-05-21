@@ -200,7 +200,7 @@ class PniHelper {
       }
     }
 
-    $result = [
+    $return_result = [
       'success' => TRUE,
       'operation' => $operation,
     ];
@@ -236,7 +236,7 @@ class PniHelper {
         $result = $this->db()->exec($query);
         break;
     }
-    return $result;
+    return $return_result;
   }
 
 }

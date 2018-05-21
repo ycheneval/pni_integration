@@ -66,7 +66,7 @@ class PniServicesController {
 //    $wd = new Watchdog($app);
 //    $wd->watchdog('warning', 'Here is our request object @r', ['@r' => print_r($_POST, TRUE)]);
 //    $app['monolog']->addWarning("This is a test!", (array)$request);
-    return $app->json[$result];
+    return $app->json[$this->$error_msg];
 
   }
 
