@@ -157,7 +157,7 @@ class PniHelper {
    * @param type $ref
    * @return type
    */
-  public function getStickerByIdent($album_id, $ref) {
+  public function getStickerByIdent($album_id, $ref, $use_like = FALSE) {
     $query = "SELECT
                 st.id,
                 st.ident,
@@ -165,7 +165,8 @@ class PniHelper {
                 st.team_album_id,
                 st.url
             FROM " . $this->__schema . ".sticker st
-            WHERE st.ident LIKE '%" . $ref . "%"
+            WHERE "
+            . ($use_like ? "st.ident LIKE '%" . $ref . "%'" : "st.ident = " . $ref)
             . " AND st.album_id = " . $this->db()->quote($album_id);
     $stickers = $this->db()->getRow($query);
     if ($stickers) {
@@ -189,7 +190,7 @@ class PniHelper {
                 st.team_album_id,
                 st.url
             FROM " . $this->__schema . ".sticker st
-            WHERE st.name LIKE '%" . $ref . "%"
+            WHERE st.name LIKE '%" . $ref . "%'"
             . " AND st.album_id = " . $this->db()->quote($album_id);
     $stickers = $this->db()->getRow($query);
     if ($stickers) {
@@ -215,7 +216,7 @@ class PniHelper {
             FROM " . $this->__schema . ".sticker st "
             . " INNER JOIN " . $this->__schema . ".team_album ta ON st.team_album_id = ta.id"
             . " INNER JOIN " . $this->__schema . ".team te ON ta.team_id = te.id"
-            . " WHERE te.name LIKE '%" . $ref . "%"
+            . " WHERE te.name LIKE '%" . $ref . "%'"
             . " AND st.album_id = " . $this->db()->quote($album_id);
     $stickers = $this->db()->getCollection($query);
     if ($stickers) {
@@ -244,7 +245,7 @@ class PniHelper {
       // Ok so in this case, it's a bit more complicated
       // Either we have a string ident (c1, c4), or a player name (Pogba) or
       // a team name (France). Try ident first, then name, then team
-      $stickers = $this->getStickerByIdent($album_id, $ref);
+      $stickers = $this->getStickerByIdent($album_id, $ref, TRUE);
       if (empty($stickers)) {
         $stickers = $this->getStickerByName($album_id, $ref);
         if (empty($stickers)) {
