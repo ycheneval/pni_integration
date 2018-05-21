@@ -256,7 +256,7 @@ class PniHelper {
           $stickers = $this->getStickerByTeam($album_id, $ref);
         }
       }
-      return stickers;
+      return $stickers;
     }
 
     return NULL;
