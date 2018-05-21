@@ -37,21 +37,21 @@ class PniServicesController {
     $ph = new PniHelper($request, $app);
     $wd->watchdog('notice', 'Here is our request object @r', ['@r' => print_r($_POST, TRUE)]);
     if (!$ph->checkAuth()) {
-      return $app->json($error_msg);
+      return $app->json($this->error_msg);
     }
     $wd->watchdog('notice', 'Origin checked');
 
     $album_data = $ph->getAlbum($ph->input->params[0]);
     if (!$album_data['success']) {
-      $error_msg['text'] .= ': Cannot find album';
-      return $app->json($error_msg);
+      $this->error_msg['text'] .= ': Cannot find album';
+      return $app->json($this->error_msg);
     }
 
     $wd->watchdog('notice', 'Found album @ad', ['@ad' => print_r($album_data, TRUE)]);
     $player_data = $ph->checkandCreateUser();
     if (!$player_data['success']) {
-      $error_msg['text'] .= ': Impossible to find or create user';
-      return $app->json($error_msg);
+      $this->error_msg['text'] .= ': Impossible to find or create user';
+      return $app->json($this->error_msg);
     }
     $wd->watchdog('notice', 'Found player @ad', ['@ad' => print_r($player_data, TRUE)]);
     $player_album = $ph->linkPlayerAlbum($player_data['player_id'], $album_data['payload']['id']);
