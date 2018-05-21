@@ -49,7 +49,7 @@ class PniServicesController {
     }
 
     $wd->watchdog('notice', 'Found album @ad', ['@ad' => print_r($album_data, TRUE)]);
-    $player_data = $ph->checkandCreateUser();
+    $player_data = $ph->checkandCreateUser($album_data['payload']['id']);
     if (!$player_data['success']) {
       $this->error_msg['text'] .= ': Impossible to find or create user';
       return $app->json($this->error_msg);
@@ -71,16 +71,37 @@ class PniServicesController {
   }
 
   public function got(Request $request, Application $app) {
-//    $ph = new PniHelper($request, $app);
-    $message = [
-      'response_type' => 'ephemeral',
-      'text' => "A new got has been setup:",
-    ];
-    return $app->json($message);
+    $wd = new Watchdog($app);
+    $ph = new PniHelper($request, $app);
+    $wd->watchdog('notice', 'Here is our request object @r', ['@r' => print_r($_POST, TRUE)]);
+    if (!$ph->checkAuth()) {
+      $this->error_msg['text'] .= ': Request not coming from slack';
+      return $app->json($this->error_msg);
+    }
+    $wd->watchdog('notice', 'Origin checked');
+
+    $result = $ph->got($ph->input->text);
+    if ($result['success']) {
+      $message = [
+        'response_type' => 'ephemeral',
+        'text' => "A new got has been setup",
+        'attachments' => $result['slack_attachments']
+      ];
+      return $app->json($message);
+    }
+    return $app->json($this->error_msg);
   }
 
   public function missing(Request $request, Application $app) {
-//    $ph = new PniHelper($request, $app);
+    $wd = new Watchdog($app);
+    $ph = new PniHelper($request, $app);
+    $wd->watchdog('notice', 'Here is our request object @r', ['@r' => print_r($_POST, TRUE)]);
+    if (!$ph->checkAuth()) {
+      $this->error_msg['text'] .= ': Request not coming from slack';
+      return $app->json($this->error_msg);
+    }
+    $wd->watchdog('notice', 'Origin checked');
+
     $message = [
       'response_type' => 'ephemeral',
       'text' => "A new missing has been setup:",
@@ -89,7 +110,15 @@ class PniServicesController {
   }
 
   public function stats(Request $request, Application $app) {
-//    $ph = new PniHelper($request, $app);
+    $wd = new Watchdog($app);
+    $ph = new PniHelper($request, $app);
+    $wd->watchdog('notice', 'Here is our request object @r', ['@r' => print_r($_POST, TRUE)]);
+    if (!$ph->checkAuth()) {
+      $this->error_msg['text'] .= ': Request not coming from slack';
+      return $app->json($this->error_msg);
+    }
+    $wd->watchdog('notice', 'Origin checked');
+
     $message = [
       'response_type' => 'ephemeral',
       'text' => "A new stats has been setup:",
@@ -98,7 +127,15 @@ class PniServicesController {
   }
 
   public function find(Request $request, Application $app) {
-//    $ph = new PniHelper($request, $app);
+    $wd = new Watchdog($app);
+    $ph = new PniHelper($request, $app);
+    $wd->watchdog('notice', 'Here is our request object @r', ['@r' => print_r($_POST, TRUE)]);
+    if (!$ph->checkAuth()) {
+      $this->error_msg['text'] .= ': Request not coming from slack';
+      return $app->json($this->error_msg);
+    }
+    $wd->watchdog('notice', 'Origin checked');
+
     $message = [
       'response_type' => 'ephemeral',
       'text' => "A new find has been setup:",
@@ -107,7 +144,15 @@ class PniServicesController {
   }
 
   public function exchange(Request $request, Application $app) {
-//    $ph = new PniHelper($request, $app);
+    $wd = new Watchdog($app);
+    $ph = new PniHelper($request, $app);
+    $wd->watchdog('notice', 'Here is our request object @r', ['@r' => print_r($_POST, TRUE)]);
+    if (!$ph->checkAuth()) {
+      $this->error_msg['text'] .= ': Request not coming from slack';
+      return $app->json($this->error_msg);
+    }
+    $wd->watchdog('notice', 'Origin checked');
+
     $message = [
       'response_type' => 'ephemeral',
       'text' => "A new echange has been setup:",
@@ -116,7 +161,15 @@ class PniServicesController {
   }
 
   public function totrade(Request $request, Application $app) {
-//    $ph = new PniHelper($request, $app);
+    $wd = new Watchdog($app);
+    $ph = new PniHelper($request, $app);
+    $wd->watchdog('notice', 'Here is our request object @r', ['@r' => print_r($_POST, TRUE)]);
+    if (!$ph->checkAuth()) {
+      $this->error_msg['text'] .= ': Request not coming from slack';
+      return $app->json($this->error_msg);
+    }
+    $wd->watchdog('notice', 'Origin checked');
+
     $message = [
       'response_type' => 'ephemeral',
       'text' => "A new totrade has been setup:",
@@ -125,7 +178,15 @@ class PniServicesController {
   }
 
   public function traded(Request $request, Application $app) {
-//    $ph = new PniHelper($request, $app);
+    $wd = new Watchdog($app);
+    $ph = new PniHelper($request, $app);
+    $wd->watchdog('notice', 'Here is our request object @r', ['@r' => print_r($_POST, TRUE)]);
+    if (!$ph->checkAuth()) {
+      $this->error_msg['text'] .= ': Request not coming from slack';
+      return $app->json($this->error_msg);
+    }
+    $wd->watchdog('notice', 'Origin checked');
+
     $message = [
       'response_type' => 'ephemeral',
       'text' => "A new traded has been setup:",
@@ -134,7 +195,15 @@ class PniServicesController {
   }
 
   public function watch(Request $request, Application $app) {
-//    $ph = new PniHelper($request, $app);
+    $wd = new Watchdog($app);
+    $ph = new PniHelper($request, $app);
+    $wd->watchdog('notice', 'Here is our request object @r', ['@r' => print_r($_POST, TRUE)]);
+    if (!$ph->checkAuth()) {
+      $this->error_msg['text'] .= ': Request not coming from slack';
+      return $app->json($this->error_msg);
+    }
+    $wd->watchdog('notice', 'Origin checked');
+
     $message = [
       'response_type' => 'ephemeral',
       'text' => "A new watch has been setup:",

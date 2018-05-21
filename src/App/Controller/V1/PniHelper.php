@@ -61,7 +61,7 @@ class PniHelper {
 //      $this->__jwt = JWT::decode($jwt_sample, $jwt_key, $jwt_algorithm);
 //      $this->wd->watchdog('RegHelper', 'Decoded JSON: @jwt', ['@jwt' => print_r($this->__jwt, TRUE)]);
 //    }
-//    catch (\Exception $e) {
+//    catch (\Exception $e)
 //      $this->wd->watchdog('RegHelper', 'Error Decoding jWT, aborting (@e)', ['@e' => $e->getMessage()]);
 //      $this->wd->watchdog('RegHelper', '@j', ['@j' => $jwt_sample]);
 //    }
@@ -117,52 +117,153 @@ class PniHelper {
   }
 
   /**
+   * Return album data
+   *
+   */
+  public function getStickers($album_id) {
+    $query = "SELECT
+                st.id,
+                st.ident,
+                st.name,
+                st.team_id,
+                st.url
+            FROM " . $this->__schema . ".sticker st
+            WHERE st.album_id = " . $this->db()->quote($album_id);
+    $stickers = $this->db()->getCollection($query);
+    $data = [];
+    if ($stickers) {
+      $data['success'] = TRUE;
+      foreach($stickers as $a_sticker) {
+        $data['payload'][] = [
+          'id' => $a_sticker['id'],
+          'album_id' => $album_id,
+          'ident' => $a_sticker['ident'],
+          'name' => $a_sticker['name'],
+          'team_id' => $a_sticker['team_id'],
+          'url' => $a_sticker['url'],
+          ];
+      }
+    }
+    else {
+      $data['success'] = FALSE;
+    }
+    return $data;
+  }
+
+  /**
+   * Return player data
+   *
+   */
+  public function getPlayer($player_id) {
+    $query = "SELECT
+                pl.id,
+                pl.external_id,
+                pl.external_type,
+                pl.first,
+                pl.last,
+                pl.nick,
+                pl.date_added,
+                pl.privacy,
+                pl.current_album_id
+            FROM " . $this->__schema . ".player pl
+            WHERE pl.id = " . $this->db()->quote($player_id);
+    $data = $this->db()->getRow($query);
+    if ($data) {
+      return [
+        'success' => TRUE,
+        'payload' => $data,
+      ];
+    }
+    else {
+      return [
+        'success' => FALSE,
+        'payload' => NULL,
+      ];
+    }
+  }
+
+  /**
+   * Return player data
+   *
+   */
+  public function getSlackPlayer($slack_player_id) {
+    $query = "SELECT
+                pl.id,
+                pl.external_id,
+                pl.external_type,
+                pl.first,
+                pl.last,
+                pl.nick,
+                pl.date_added,
+                pl.privacy,
+                pl.current_album_id
+            FROM " . $this->__schema . ".player pl
+            WHERE pl.external_id = " . $this->db()->quote($slack_player_id)
+            . " AND pl.external_type = 'slack'";
+    $data = $this->db()->getRow($query);
+    if ($data) {
+      return [
+        'success' => TRUE,
+        'payload' => $data,
+      ];
+    }
+    else {
+      return [
+        'success' => FALSE,
+        'payload' => NULL,
+      ];
+    }
+  }
+
+  /**
    * Check if player exists, if not create it and return data
    *
    * @return type
    */
-  public function checkandCreateUser() {
+  public function checkandCreateUser($album_id) {
     switch ($this->input->client_type) {
       case 'slack':
-        $query = "SELECT pl.id, pl.external_id
-                FROM " . $this->__schema . ".player pl
-                WHERE pl.external_id = " . $this->db()->quote($this->input->user_id)
-                . " AND pl.external_type = 'slack'";
-        $data = $this->db()->getRow($query);
+        $slack_player = getSlackPlayer($this->input->user_id);
 
-        if ($data) {
-          // All good, no need to create anything
+        if ($slack_player['success']) {
+          // Are we talking about the correct album?
+          if ($album_id != $slack_player['payload']['current_album_id']) {
+            $query = "UPDATE " . $this->__schema . ".player SET current_album_id = " . $this->db()->quote($album_id)
+              . " WHERE id = " . $slack_player['payload']['id'];
+            $this->db()->exec($query);
+          }
+          // All good, no need to create player
           return [
             'success' => TRUE,
             'new_player' => FALSE,
-            'player_id' => $data['id']
+            'player_id' => $slack_player['payload']['id'],
+            'payload' => $slack_player['payload'],
             ];
         }
         else {
           // Insert new player
-        $query = "INSERT INTO " . $this->__schema . ".player (external_id, external_type, nick, privacy) "
-          . "VALUES ("
-          . $this->db()->quote($this->input->user_id)
-          . ", " . $this->db()->quote('slack')
-          . ", " . $this->db()->quote($this->input->user_name)
-          . ", FALSE"
-          . ") RETURNING id";
+          $query = "INSERT INTO " . $this->__schema . ".player (external_id, external_type, nick, privacy, current_album_id) "
+            . "VALUES ("
+            . $this->db()->quote($this->input->user_id)
+            . ", " . $this->db()->quote('slack')
+            . ", " . $this->db()->quote($this->input->user_name)
+            . ", FALSE"
+            . ", " . $this->db()->quote($album_id)
+            . ") RETURNING id";
         }
         $result = $this->db()->exec($query);
         $this->wd->watchdog('checkandCreateUser', 'Got result as @r', ['@r' => print_r($result, TRUE)]);
         // Get player id
-        $query = "SELECT pl.id
-                FROM " . $this->__schema . ".player pl
-                WHERE pl.external_id = " . $this->db()->quote($this->input->user_id)
-                . " AND pl.external_type = 'slack'";
-        $data = $this->db()->getRow($query);
-        if ($data) {
+        $slack_player = $this->getSlackPlayer($this->input->user_id);
+        if ($slack_player['success']) {
           return [
             'success' => TRUE,
             'new_player' => TRUE,
-            'player_id' => $data['id']
+            'player_id' => $slack_player['payload']['id'],
+            'payload' => $slack_player['payload'],
             ];
         }
+        // If we reach here, we got and error
         break;
 
       default:
@@ -170,6 +271,8 @@ class PniHelper {
     }
     return [
       'success' => FALSE,
+      'player_id' => NULL,
+      'payload' => NULL,
     ];
   }
 
@@ -239,4 +342,23 @@ class PniHelper {
     return $return_result;
   }
 
+  /**
+   * Indicated which stickers you already got
+   *
+   */
+  public function got($stickers) {
+    // First split the $stickers
+    $s_array = \explode(' ', $stickers);
+    $result_stickers = [];
+    foreach ($s_array as $s_arr_value) {
+      switch ($s_arr_value) {
+        case 'all':
+          // We are talking about all stickers
+          break;
+      }
+    }
+//    attachments.push({color: "#A094ED", fields: fields});
+//                });
+//                res.json({response_type: 'ephemeral', text: "Contacts matching '" + req.body.text + "':", attachments: attachments});
+  }
 }
