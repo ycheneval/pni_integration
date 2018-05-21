@@ -31,7 +31,6 @@ class PniHelper {
   protected $_logged_sfid = NULL;
   protected $_oc_info = NULL;
   public $input = NULL;
-  const CLIENT_TYPE = 'slack';
 
   public function __construct($request, $app, $jWT = NULL) {
     $this->app = $app;
@@ -53,7 +52,7 @@ class PniHelper {
     $this->input->params = \explode(' ', $this->input->text);
     $this->input->response_url = $_POST['response_url'];
     $this->input->trigger_id = $_POST['trigger_id'];
-    $this->input->client_type = $this->CLIENT_TYPE;
+    $this->input->client_type = 'slack';
 
 //    $jwt_sample = $jWT;
 //    $jwt_key = $_ENV['JWT_SECRET'];
@@ -82,7 +81,7 @@ class PniHelper {
   //////////////////////////////////////////////////////////////////////////
 
   public function checkAuth() {
-    return (0 == strcmp($this->input->token, $_POST[$_ENV['SLACK_APPKEY']]));
+    return (0 == strcmp($this->input->token, $_POST[$_ENV['SLACK_APPTOKEN']]));
   }
 
   /**
