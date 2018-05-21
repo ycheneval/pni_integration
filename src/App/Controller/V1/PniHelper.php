@@ -225,12 +225,17 @@ class PniHelper {
 
       case 'INSERT':
         // We need to setup the album
-        $query = "INSERT INTO " . $this->__schema . ".player_sticker ps (player_id, sticker_id, owned, trading_capacity)
+        $query = "INSERT INTO " . $this->__schema . ".player_sticker (player_id, sticker_id, owned, trading_capacity)
           VALUES ( "
           . "   SELECT " . $player_id . ", st.id, false, 0 FROM " . $this->__schema . ".sticker st WHERE st.album_id = " . $this->db()->quote($album_id)
           . " )";
         $result = $this->db()->exec($query);
         $this->wd->watchdog('linkPlayerAlbum', 'Operation @o, result as @r', ['@o' => $operation, '@r' => print_r($result, TRUE)]);
+        // Now make sure there is data in the player_album table
+        $query = "INSERT INTO " . $this->__schema . ".player_album (player_id, album_id)
+          VALUES ( " . $player_id . ', ' . $album_id
+          . " )";
+        $result = $this->db()->exec($query);
         break;
     }
     return $result;
