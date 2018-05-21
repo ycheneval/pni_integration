@@ -282,7 +282,7 @@ class PniHelper {
         // We do have a dash, so enumerate from start to finish
         for ($i=$dashes_block[0]; $i <= $dashes_block[1]; $i++) {
           // No need of foreach as this will return a single sticker for sure
-          $result[] = $this->findStickerByRef($album_id, $i);
+          $result = array_merge($result, $this->findStickerByRef($album_id, $i));
         }
       }
       else {
