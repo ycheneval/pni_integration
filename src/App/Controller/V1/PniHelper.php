@@ -117,37 +117,176 @@ class PniHelper {
   }
 
   /**
-   * Return album data
+   * Return all stickers for a given album
    *
    */
-  public function getStickers($album_id) {
+  public function getStickersByAlbum($album_id) {
     $query = "SELECT
                 st.id,
                 st.ident,
                 st.name,
-                st.team_id,
+                st.team_album_id,
                 st.url
             FROM " . $this->__schema . ".sticker st
             WHERE st.album_id = " . $this->db()->quote($album_id);
     $stickers = $this->db()->getCollection($query);
-    $data = [];
+    $data = [
+      'success' => FALSE,
+      'album_id' => $album_id,
+      'payload' => [],
+    ];
     if ($stickers) {
       $data['success'] = TRUE;
       foreach($stickers as $a_sticker) {
         $data['payload'][] = [
           'id' => $a_sticker['id'],
-          'album_id' => $album_id,
           'ident' => $a_sticker['ident'],
           'name' => $a_sticker['name'],
-          'team_id' => $a_sticker['team_id'],
+          'team_album_id' => $a_sticker['team_album_id'],
           'url' => $a_sticker['url'],
           ];
       }
     }
-    else {
-      $data['success'] = FALSE;
-    }
     return $data;
+  }
+
+  /**
+   * Find a sticker by its ident
+   *
+   * @param type $album_id
+   * @param type $ref
+   * @return type
+   */
+  public function getStickerByIdent($album_id, $ref) {
+    $query = "SELECT
+                st.id,
+                st.ident,
+                st.name,
+                st.team_album_id,
+                st.url
+            FROM " . $this->__schema . ".sticker st
+            WHERE st.ident LIKE '%" . $ref . "%"
+            . " AND st.album_id = " . $this->db()->quote($album_id);
+    $stickers = $this->db()->getRow($query);
+    if ($stickers) {
+      return $stickers['id'];
+    }
+    return NULL;
+  }
+
+  /**
+   * Find a sticker by its name
+   *
+   * @param type $album_id
+   * @param type $ref
+   * @return type
+   */
+  public function getStickerByName($album_id, $ref) {
+    $query = "SELECT
+                st.id,
+                st.ident,
+                st.name,
+                st.team_album_id,
+                st.url
+            FROM " . $this->__schema . ".sticker st
+            WHERE st.name LIKE '%" . $ref . "%"
+            . " AND st.album_id = " . $this->db()->quote($album_id);
+    $stickers = $this->db()->getRow($query);
+    if ($stickers) {
+      return $stickers['id'];
+    }
+    return NULL;
+  }
+
+  /**
+   * Find a sticker by its team
+   *
+   * @param type $album_id
+   * @param type $ref
+   * @return type
+   */
+  public function getStickerByTeam($album_id, $ref) {
+    $query = "SELECT
+                st.id,
+                st.ident,
+                st.name,
+                st.team_album_id,
+                st.url
+            FROM " . $this->__schema . ".sticker st "
+            . " INNER JOIN " . $this->__schema . ".team_album ta ON st.team_album_id = ta.id"
+            . " INNER JOIN " . $this->__schema . ".team te ON ta.team_id = te.id"
+            . " WHERE te.name LIKE '%" . $ref . "%"
+            . " AND st.album_id = " . $this->db()->quote($album_id);
+    $stickers = $this->db()->getCollection($query);
+    if ($stickers) {
+      foreach ($stickers as $a_sticker) {
+        $result[] = $a_sticker['id'];
+      }
+      return $result;
+    }
+    return NULL;
+  }
+
+  /**
+   * Return a sticker id (or an array of sticker ids) based on the $ref and $album_id
+   *
+   * @param type $album_id
+   * @param type $ref
+   */
+  public function findStickerByRef($album_id, $ref) {
+    // Find a sticker. It can be an ident like a number (205), a name like pogba
+    // or even maybe a team
+    if (is_numeric($ref)) {
+      // Look by ident for sure
+      return $this->getStickerByIdent($album_id, $ref);
+    }
+    else {
+      // Ok so in this case, it's a bit more complicated
+      // Either we have a string ident (c1, c4), or a player name (Pogba) or
+      // a team name (France). Try ident first, then name, then team
+      $stickers = $this->getStickerByIdent($album_id, $ref);
+      if (empty($stickers)) {
+        $stickers = $this->getStickerByName($album_id, $ref);
+        if (empty($stickers)) {
+          $stickers = $this->getStickerByTeam($album_id, $ref);
+        }
+      }
+      return stickers;
+    }
+
+    return NULL;
+  }
+
+  /**
+   * The goal is to get sticker list and output a sticker array of recognized sticker id
+   *
+   */
+  public function decodeStickers($all_stickers, $stickers_input) {
+    $result = [];
+    // We already know that $all_stickers is valid
+    $album_id = $all_stickers['album_id'];
+
+    // First, split by ,
+    $sticker_blocks = \explode(',', $stickers_input);
+    foreach ($sticker_blocks as $a_sticker_block) {
+      // Do we have dashes ?
+      $dashes_block = \explode('-', $a_sticker_block);
+      if ($dashes_block) {
+        // We do have a dash, so enumerate from start to finish
+        for ($i=$dashes_block[0]; $i <= $dashes_block[1]; $i++) {
+          // No need of foreach as this will return a single sticker for sure
+          $result[] = $this->findStickerByRef($album_id, $i);
+        }
+      }
+      else {
+        // No dashes
+        $result = array_merge($result, $this->findStickerByRef($album_id, $a_sticker_block));
+//        foreach ($unref_stickers as $an_unref_sticker) {
+//          $result[] = $an_unref_sticker;
+//        }
+      }
+    }
+    return $result;
   }
 
   /**
@@ -346,17 +485,73 @@ class PniHelper {
    * Indicated which stickers you already got
    *
    */
-  public function got($stickers) {
+  public function got($player_id, $album_id, $stickers) {
+    $all_stickers = $this->getStickersByAlbum($album_id);
+    if (!$all_stickers['success']) {
+      // There are no stickers, return an error
+      return [
+        'success' => FALSE,
+        'error_message' => 'We cannot find stickers for this album!',
+      ];
+    }
+
     // First split the $stickers
     $s_array = \explode(' ', $stickers);
-    $result_stickers = [];
+
+    // Setup some variables
+    $result_stickers = [
+      'to_add' => [],
+      'to_remove' => [],
+    ];
+    $exclude_following = false;
     foreach ($s_array as $s_arr_value) {
       switch ($s_arr_value) {
         case 'all':
-          // We are talking about all stickers
+          // We are talking about all stickers, add them all to $result_stickers
+          $result_stickers['to_add'] = array_map(function ($a_sticker) { return $a_sticker['id']; }, $all_stickers['payload']);
+          break;
+
+        case 'but':
+        case 'except':
+          // to handle /got all but 3-4
+          $exclude_following = TRUE;
+          break;
+
+        default:
+          // Ok so this is the list of stickers. Find'em all!
+          $input_stickers = $this->decodeStickers($all_stickers, $s_arr_value);
+          $key = ($exclude_following ? 'to_remove' : 'to_add');
+          foreach ($input_stickers as $an_input_sticker) {
+            $results_stickers[$key][] = $an_input_sticker;
+          }
           break;
       }
+
+      // Now we should have in $result_stickers the list of things to do
+      // in to_add or to_remove
+      if (!empty($result_stickers)) {
+        if (!empty($result_stickers['to_add'])) {
+          $query = "UPDATE player_sticker SET owned = TRUE WHERE sticker_id IN (" . \implode(',', $result_stickers['to_add']) . ')'
+            . ' AND player_id = ' . $this->db()->quote($player_id);
+          $result = $this->db()->exec($query);
+        }
+        if (!empty($result_stickers['to_remove'])) {
+          $query = "UPDATE player_sticker SET owned = FALSE WHERE sticker_id IN (" . \implode(',', $result_stickers['to_remove']) . ')'
+            . ' AND player_id = ' . $this->db()->quote($player_id);
+          $result = $this->db()->exec($query);
+        }
+      }
+      return [
+        'success' => TRUE,
+        'msg' => 'Stickers have been processed and added (or removed) from your album',
+        'slack_attachments' => NULL,
+      ];
     }
+      return [
+        'success' => FALSE,
+        'msg' => 'There was an error processing your command, please review the syntax',
+        'slack_attachments' => NULL,
+      ];
 //    attachments.push({color: "#A094ED", fields: fields});
 //                });
 //                res.json({response_type: 'ephemeral', text: "Contacts matching '" + req.body.text + "':", attachments: attachments});
