@@ -81,7 +81,7 @@ class PniHelper {
   //////////////////////////////////////////////////////////////////////////
 
   public function checkAuth() {
-    return (0 == strcmp($this->input->token, $_POST[$_ENV['SLACK_APPTOKEN']]));
+    return (0 == strcmp($this->input->token, $_ENV['SLACK_APPTOKEN']));
   }
 
   /**
