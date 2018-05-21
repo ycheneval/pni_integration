@@ -170,7 +170,7 @@ class PniHelper {
             . " AND st.album_id = " . $this->db()->quote($album_id);
     $stickers = $this->db()->getRow($query);
     if ($stickers) {
-      return $stickers['id'];
+      return (array)$stickers['id'];
     }
     return NULL;
   }
@@ -194,7 +194,7 @@ class PniHelper {
             . " AND st.album_id = " . $this->db()->quote($album_id);
     $stickers = $this->db()->getRow($query);
     if ($stickers) {
-      return $stickers['id'];
+      return (array)$stickers['id'];
     }
     return NULL;
   }
@@ -283,8 +283,8 @@ class PniHelper {
       }
       else {
         // No dashes
-        $this->wd->watchdog('decodeStickers', 'No block: @b', ['@b' => $a_sticker_block]);
         $result = array_merge($result, $this->findStickerByRef($album_id, $a_sticker_block));
+        $this->wd->watchdog('decodeStickers', 'No block: @b, found stick', ['@b' => $a_sticker_block]);
 //        foreach ($unref_stickers as $an_unref_sticker) {
 //          $result[] = $an_unref_sticker;
 //        }
