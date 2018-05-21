@@ -223,7 +223,7 @@ class PniHelper {
   public function checkandCreateUser($album_id) {
     switch ($this->input->client_type) {
       case 'slack':
-        $slack_player = getSlackPlayer($this->input->user_id);
+        $slack_player = $this->getSlackPlayer($this->input->user_id);
 
         if ($slack_player['success']) {
           // Are we talking about the correct album?
