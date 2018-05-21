@@ -272,7 +272,7 @@ class PniHelper {
     foreach ($sticker_blocks as $a_sticker_block) {
       // Do we have dashes ?
       $dashes_block = \explode('-', $a_sticker_block);
-      if ($dashes_block) {
+      if (count($dashes_block) > 1) {
         $this->wd->watchdog('decodeStickers', 'Block found: @b', ['@b' => print_r($dashes_block, TRUE)]);
         // We do have a dash, so enumerate from start to finish
         for ($i=$dashes_block[0]; $i <= $dashes_block[1]; $i++) {
@@ -502,10 +502,10 @@ class PniHelper {
 
     // First split the $stickers
     $s_array = \explode(' ', $stickers);
-    if (!$s_array)
-      {
-        $s_array = (array)$stickers;
-      }
+//    if (!$s_array)
+//      {
+//        $s_array = (array)$stickers;
+//      }
 
     // Setup some variables
     $result_stickers = [
