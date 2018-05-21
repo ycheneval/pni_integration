@@ -486,6 +486,7 @@ class PniHelper {
    *
    */
   public function got($player_id, $album_id, $stickers) {
+    $this->wd->watchdog('got', 'Trying to process @t for album @a and player @p', ['@t' => $stickers, '@a' => $album_id, '@p' => $player_id]);
     $all_stickers = $this->getStickersByAlbum($album_id);
     if (!$all_stickers['success']) {
       // There are no stickers, return an error
@@ -494,7 +495,7 @@ class PniHelper {
         'error_message' => 'We cannot find stickers for this album!',
       ];
     }
-    $this->wd->watchdog('got', 'All Stickers found: @c', ['@q' => count($all_stickers['payload'])]);
+    $this->wd->watchdog('got', 'All Stickers found: @c', ['@c' => count($all_stickers['payload'])]);
 
     // First split the $stickers
     $s_array = \explode(' ', $stickers);
@@ -504,7 +505,7 @@ class PniHelper {
       'to_add' => [],
       'to_remove' => [],
     ];
-    $exclude_following = false;
+    $exclude_following = FALSE;
     foreach ($s_array as $s_arr_value) {
       switch ($s_arr_value) {
         case 'all':
