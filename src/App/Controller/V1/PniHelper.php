@@ -166,7 +166,7 @@ class PniHelper {
                 st.url
             FROM " . $this->__schema . ".sticker st
             WHERE "
-            . ($use_like ? "st.ident LIKE '%" . $ref . "%'" : "st.ident = " . $ref)
+            . ($use_like ? "st.ident LIKE '%" . $ref . "%'" : "st.ident = " . $this->db()->quote($ref))
             . " AND st.album_id = " . $this->db()->quote($album_id);
     $stickers = $this->db()->getRow($query);
     if ($stickers) {
