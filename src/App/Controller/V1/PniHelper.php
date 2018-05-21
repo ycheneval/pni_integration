@@ -514,7 +514,9 @@ class PniHelper {
       switch ($s_arr_value) {
         case 'all':
           // We are talking about all stickers, add them all to $result_stickers
-          $result_stickers['to_add'] = array_map(function ($a_sticker) { return $a_sticker['id']; }, $all_stickers['payload']);
+          $result_stickers['to_add'] = array_map(function ($a_sticker) {
+            return $a_sticker['id'];
+          }, $all_stickers['payload']);
           break;
 
         case 'but':
@@ -534,23 +536,23 @@ class PniHelper {
           }
           break;
       }
-      $this->wd->watchdog('got', 'Found result_stickers: @rs', ['@rs' => print_r($result_stickers, TRUE)]);
-
-      // Now we should have in $result_stickers the list of things to do
-      // in to_add or to_remove
-      if (!empty($result_stickers)) {
-        if (!empty($result_stickers['to_add'])) {
-          $query = "UPDATE player_sticker SET owned = TRUE WHERE sticker_id IN (" . \implode(',', $result_stickers['to_add']) . ')'
-            . ' AND player_id = ' . $this->db()->quote($player_id);
-          $this->wd->watchdog('got', 'Add Query to execute: @q', ['@q' => $query]);
-          $result = $this->db()->exec($query);
-        }
-        if (!empty($result_stickers['to_remove'])) {
-          $query = "UPDATE player_sticker SET owned = FALSE WHERE sticker_id IN (" . \implode(',', $result_stickers['to_remove']) . ')'
-            . ' AND player_id = ' . $this->db()->quote($player_id);
-          $this->wd->watchdog('got', 'Remove Query to execute: @q', ['@q' => $query]);
-          $result = $this->db()->exec($query);
-        }
+    }
+    $this->wd->watchdog('got', 'Found result_stickers: @rs', ['@rs' => print_r($result_stickers, TRUE)]);
+    
+    // Now we should have in $result_stickers the list of things to do
+    // in to_add or to_remove
+    if (!empty($result_stickers)) {
+      if (!empty($result_stickers['to_add'])) {
+        $query = "UPDATE player_sticker SET owned = TRUE WHERE sticker_id IN (" . \implode(',', $result_stickers['to_add']) . ')'
+          . ' AND player_id = ' . $this->db()->quote($player_id);
+        $this->wd->watchdog('got', 'Add Query to execute: @q', ['@q' => $query]);
+        $result = $this->db()->exec($query);
+      }
+      if (!empty($result_stickers['to_remove'])) {
+        $query = "UPDATE player_sticker SET owned = FALSE WHERE sticker_id IN (" . \implode(',', $result_stickers['to_remove']) . ')'
+          . ' AND player_id = ' . $this->db()->quote($player_id);
+        $this->wd->watchdog('got', 'Remove Query to execute: @q', ['@q' => $query]);
+        $result = $this->db()->exec($query);
       }
       return [
         'success' => TRUE,
@@ -558,11 +560,11 @@ class PniHelper {
         'slack_attachments' => NULL,
       ];
     }
-      return [
-        'success' => FALSE,
-        'msg' => 'There was an error processing your command, please review the syntax',
-        'slack_attachments' => NULL,
-      ];
+    return [
+      'success' => FALSE,
+      'msg' => 'There was an error processing your command, please review the syntax',
+      'slack_attachments' => NULL,
+    ];
 //    attachments.push({color: "#A094ED", fields: fields});
 //                });
 //                res.json({response_type: 'ephemeral', text: "Contacts matching '" + req.body.text + "':", attachments: attachments});
