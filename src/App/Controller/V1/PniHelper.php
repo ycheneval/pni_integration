@@ -135,7 +135,7 @@ class PniHelper {
           return [
             'success' => TRUE,
             'new_player' => FALSE,
-            'player_id' => $reg_data['id']
+            'player_id' => $data['id']
             ];
         }
         else {
@@ -160,7 +160,7 @@ class PniHelper {
           return [
             'success' => TRUE,
             'new_player' => TRUE,
-            'player_id' => $reg_data['id']
+            'player_id' => $data['id']
             ];
         }
         break;
