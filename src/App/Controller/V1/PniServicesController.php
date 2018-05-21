@@ -37,6 +37,7 @@ class PniServicesController {
     $ph = new PniHelper($request, $app);
     $wd->watchdog('notice', 'Here is our request object @r', ['@r' => print_r($_POST, TRUE)]);
     if (!$ph->checkAuth()) {
+      $this->error_msg['text'] .= ': Request not coming from slack';
       return $app->json($this->error_msg);
     }
     $wd->watchdog('notice', 'Origin checked');
