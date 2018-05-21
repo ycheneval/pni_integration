@@ -499,6 +499,10 @@ class PniHelper {
 
     // First split the $stickers
     $s_array = \explode(' ', $stickers);
+    if (!$s_array)
+      {
+        $s_array = (array)$stickers;
+      }
 
     // Setup some variables
     $result_stickers = [
