@@ -33,6 +33,7 @@ class PniServicesController {
   ];
 
   public function album(Request $request, Application $app) {
+    $wd = new Watchdog($app);
     $ph = new PniHelper($request, $app);
     if (!$ph->checkAuth()) {
       return $app->json($error_msg);
@@ -44,20 +45,19 @@ class PniServicesController {
       return $app->json($error_msg);
     }
 
+    $wd->watchdog('notice', 'Found album @ad', ['@ad' => print_r($album_data, TRUE)]);
     $player_data = $ph->checkandCreateUser();
     if (!$player_data['success']) {
       $error_msg['text'] .= ': Impossible to find or create user';
       return $app->json($error_msg);
     }
-    if ($player_data['new_player']) {
-      // In that case, we need to create new data to enter all stickers for the album/user
-       $player_album = $ph->linkPlayerAlbum($player_data['player_id'], $album_data['payload']['id']);
-       if ($player_album['success']) {
-         return $app->json([
-           'response_type' => 'ephemeral',
-           'text' => 'Operation ' . $player_album['operation'] . ' performed successfully',
-         ]);
-       }
+    $wd->watchdog('notice', 'Found player @ad', ['@ad' => print_r($player_data, TRUE)]);
+    $player_album = $ph->linkPlayerAlbum($player_data['player_id'], $album_data['payload']['id']);
+    if ($player_album['success']) {
+      return $app->json([
+        'response_type' => 'ephemeral',
+        'text' => 'Operation ' . $player_album['operation'] . ' performed successfully',
+      ]);
     }
 
 //    $wd = new Watchdog($app);
