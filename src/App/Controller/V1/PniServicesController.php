@@ -27,16 +27,44 @@ use Wef\ExtCrypto;
  */
 class PniServicesController {
 
+  protected $error_msg = [
+    'response_type' => 'ephemeral',
+     'text' => "There was an error processing your command",
+  ];
+
   public function album(Request $request, Application $app) {
-//    $ph = new PniHelper($request, $app);
-    $wd = new Watchdog($app);
-    $wd->watchdog('warning', 'Here is our request object @r', ['@r' => print_r($_POST, TRUE)]);
-    $app['monolog']->addWarning("This is a test!", (array)$request);
-    $message = [
-      'response_type' => 'ephemeral',
-      'text' => "A new album has been setup:",
-    ];
-    return $app->json($message);
+    $ph = new PniHelper($request, $app);
+    if (!$ph->checkAuth()) {
+      return $app->json($error_msg);
+    }
+
+    $album_data = $ph->getAlbum($ph->input->params[0]);
+    if (!$album_data['success']) {
+      $error_msg['text'] .= ': Cannot find album';
+      return $app->json($error_msg);
+    }
+
+    $player_data = $ph->checkandCreateUser();
+    if (!$player_data['success']) {
+      $error_msg['text'] .= ': Impossible to find or create user';
+      return $app->json($error_msg);
+    }
+    if ($player_data['new_player']) {
+      // In that case, we need to create new data to enter all stickers for the album/user
+       $player_album = $ph->linkPlayerAlbum($player_data['player_id'], $album_data['payload']['id']);
+       if ($player_album['success']) {
+         return $app->json([
+           'response_type' => 'ephemeral',
+           'text' => 'Operation ' . $player_album['operation'] . ' performed successfully',
+         ]);
+       }
+    }
+
+//    $wd = new Watchdog($app);
+//    $wd->watchdog('warning', 'Here is our request object @r', ['@r' => print_r($_POST, TRUE)]);
+//    $app['monolog']->addWarning("This is a test!", (array)$request);
+    return $app->json[$result];
+
   }
 
   public function got(Request $request, Application $app) {
