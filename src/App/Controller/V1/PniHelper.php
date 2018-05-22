@@ -769,7 +769,7 @@ class PniHelper {
         . " WHERE ps.sticker_id IN (" . \implode(',', current($a_sticker_operation)) . ") "
           . " AND st.album_id = " . $album_id
           . " AND ps.trading_capacity > 0 "
-          . " AND ps_player_id != " . $this->db()->quote($player_id)
+          . " AND ps.player_id != " . $this->db()->quote($player_id)
           . " GROUP BY pl.nick ";
         $this->wd->watchdog('traded', 'Query to execute: @q', ['@q' => $query]);
         $stickers_available = $this->db()->getCollection($query);
