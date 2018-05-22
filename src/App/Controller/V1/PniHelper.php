@@ -559,7 +559,7 @@ class PniHelper {
     // in to_add or to_remove
     if (!empty($stickers_operations)) {
       foreach ($stickers_operations as $a_sticker_operation) {
-        $query = "UPDATE player_sticker SET owned = " . (key($a_sticker_operation) == 'to_add' ? "TRUE" : "FALSE") . " WHERE sticker_id IN (" . \implode(',', current($a_sticker_operation)) . ")"
+        $query = "UPDATE " . $this->__schema . ".player_sticker SET owned = " . (key($a_sticker_operation) == 'to_add' ? "TRUE" : "FALSE") . " WHERE sticker_id IN (" . \implode(',', current($a_sticker_operation)) . ")"
           . " AND player_id = " . $this->db()->quote($player_id);
         $this->wd->watchdog('got', 'Query to execute: @q', ['@q' => $query]);
         $result = $this->db()->exec($query);
@@ -632,7 +632,7 @@ class PniHelper {
     // in to_add or to_remove
     if (!empty($stickers_operations)) {
       foreach ($stickers_operations as $a_sticker_operation) {
-        $query = "UPDATE player_sticker SET trading_capacity = trading_capacity+1 WHERE sticker_id IN (" . \implode(',', current($a_sticker_operation)) . ")"
+        $query = "UPDATE " . $this->__schema . ".player_sticker SET trading_capacity = trading_capacity+1 WHERE sticker_id IN (" . \implode(',', current($a_sticker_operation)) . ")"
           . " AND player_id = " . $this->db()->quote($player_id);
         $this->wd->watchdog('totrade', 'Query to execute: @q', ['@q' => $query]);
         $result = $this->db()->exec($query);
@@ -691,16 +691,16 @@ class PniHelper {
     // in to_add or to_remove
     if (!empty($stickers_operations)) {
       foreach ($stickers_operations as $a_sticker_operation) {
-        $query = "UPDATE player_sticker SET trading_capacity = trading_capacity-1 WHERE sticker_id IN (" . \implode(',', current($a_sticker_operation)) . ")"
+        $query = "UPDATE " . $this->__schema . ".player_sticker SET trading_capacity = trading_capacity-1 WHERE sticker_id IN (" . \implode(',', current($a_sticker_operation)) . ")"
           . " AND player_id = " . $this->db()->quote($player_id);
         $this->wd->watchdog('traded', 'Query to execute: @q', ['@q' => $query]);
         $result = $this->db()->exec($query);
         // Update log
-        $query = "INSERT INTO traded_log (player_id, album_id, sticker_id "
+        $query = "INSERT INTO " . $this->__schema . ".traded_log (player_id, album_id, sticker_id "
           . " VALUES ";
         $first_row = TRUE;
         foreach (current($a_sticker_operation) as $a_sticker_traded) {
-          $query .= ($first_row ? "," : "") . "(" . $player_id . ", " . $album_id . ", " . $a_sticker_traded . ")";
+          $query .= (!$first_row ? "," : "") . "(" . $player_id . ", " . $album_id . ", " . $a_sticker_traded . ")";
           $first_row = FALSE;
         }
         $query .= ';';
