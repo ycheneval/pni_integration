@@ -775,16 +775,22 @@ class PniHelper {
         $stickers_available = $this->db()->getCollection($query);
         // Now get attachments to display the data
         foreach ($stickers_available as $a_sticker_available) {
-          $an_attachment = new \stdClass;
-          $an_attachment->title = 'Player';
-          $an_attachment->value = 'You can trade ' . $a_sticker_available['stickers'] . ' with ' . $a_sticker_available['nick'];
-          $an_attachment->short = false;
+//          $an_attachment = new \stdClass;
+//          $an_attachment->title = 'Player';
+//          $an_attachment->value = 'You can trade ' . $a_sticker_available['stickers'] . ' with ' . $a_sticker_available['nick'];
+//          $an_attachment->short = false;
+          $an_attachment = [
+            'title' => 'Player',
+            'value' => 'You can trade ' . $a_sticker_available['stickers'] . ' with ' . $a_sticker_available['nick'],
+            'short' => FALSE
+          ];
           $attachments[] = [
             'color' => "#7F8DE1",
             'fields' => $an_attachment,
           ];
         }
       }
+    $this->wd->watchdog('find', 'Found attachments: @a', ['@a' => print_r($attachments, TRUE)]);
 
       return [
         'success' => TRUE,
