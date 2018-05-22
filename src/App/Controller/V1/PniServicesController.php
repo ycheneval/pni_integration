@@ -158,6 +158,7 @@ class PniServicesController {
         ];
         $json = $app->json($message);
         $wd->watchdog('notice', 'Find results json @j', ['@j' => $json]);
+        return $json;
       }
     }
     return $app->json($this->error_msg);
