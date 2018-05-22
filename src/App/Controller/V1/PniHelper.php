@@ -493,7 +493,7 @@ class PniHelper {
   }
 
   /**
-   * Indicated which stickers you already got
+   * Indicate which stickers you already got
    *
    */
   public function got($player_id, $album_id, $stickers, $reverse = FALSE) {
@@ -579,6 +579,138 @@ class PniHelper {
       return [
         'success' => TRUE,
         'msg' => 'Stickers have been processed and added (or removed) from your album',
+        'slack_attachments' => NULL,
+      ];
+    }
+    return [
+      'success' => FALSE,
+      'msg' => 'There was an error processing your command, please review the syntax',
+      'slack_attachments' => NULL,
+    ];
+//    attachments.push({color: "#A094ED", fields: fields});
+//                });
+//                res.json({response_type: 'ephemeral', text: "Contacts matching '" + req.body.text + "':", attachments: attachments});
+  }
+
+  /**
+   * Indicate which stickers you can trade
+   *
+   */
+  public function totrade($player_id, $album_id, $stickers) {
+    $this->wd->watchdog('totrade', 'Trying to process @t for album @a and player @p', ['@t' => $stickers, '@a' => $album_id, '@p' => $player_id]);
+    $all_stickers = $this->getStickersByAlbum($album_id);
+    if (!$all_stickers['success']) {
+      // There are no stickers, return an error
+      return [
+        'success' => FALSE,
+        'error_message' => 'We cannot find stickers for this album!',
+      ];
+    }
+    $this->wd->watchdog('totrade', 'All Stickers found: @c', ['@c' => count($all_stickers['payload'])]);
+
+    // First split the $stickers
+    $s_array = \explode(' ', $stickers);
+
+    // Setup some variables
+    $stickers_operations = [];
+
+    foreach ($s_array as $s_arr_value) {
+      switch ($s_arr_value) {
+        default:
+          // Ok so this is the list of stickers. Find'em all!
+          $this->wd->watchdog('totrade', 'Default case, trying to find stickers for: @s', ['@s' => $s_arr_value]);
+          $input_stickers = $this->decodeStickers($all_stickers, $s_arr_value);
+          $key = 'to_trade';
+          $this->wd->watchdog('totrade', 'Operation @k, decoded stickers: @s', ['@k' => $key, '@s' => print_r($input_stickers, TRUE)]);
+          $stickers_operations[] = [$key => $input_stickers];
+          break;
+      }
+    }
+    $this->wd->watchdog('totrade', 'Found result_stickers: @rs', ['@rs' => print_r($result_stickers, TRUE)]);
+
+    // Now we should have in $result_stickers the list of things to do
+    // in to_add or to_remove
+    if (!empty($stickers_operations)) {
+      foreach ($stickers_operations as $a_sticker_operation) {
+        $query = "UPDATE player_sticker SET trading_capacity = trading_capacity+1 WHERE sticker_id IN (" . \implode(',', current($a_sticker_operation)) . ")"
+          . " AND player_id = " . $this->db()->quote($player_id);
+        $this->wd->watchdog('totrade', 'Query to execute: @q', ['@q' => $query]);
+        $result = $this->db()->exec($query);
+      }
+
+      return [
+        'success' => TRUE,
+        'msg' => 'Stickers to trade have been updated for your album',
+        'slack_attachments' => NULL,
+      ];
+    }
+    return [
+      'success' => FALSE,
+      'msg' => 'There was an error processing your command, please review the syntax',
+      'slack_attachments' => NULL,
+    ];
+  }
+
+  /**
+   * Indicate which stickers you have traded
+   *
+   */
+  public function traded($player_id, $album_id, $stickers) {
+    $this->wd->watchdog('traded', 'Trying to process @t for album @a and player @p', ['@t' => $stickers, '@a' => $album_id, '@p' => $player_id]);
+    $all_stickers = $this->getStickersByAlbum($album_id);
+    if (!$all_stickers['success']) {
+      // There are no stickers, return an error
+      return [
+        'success' => FALSE,
+        'error_message' => 'We cannot find stickers for this album!',
+      ];
+    }
+    $this->wd->watchdog('traded', 'All Stickers found: @c', ['@c' => count($all_stickers['payload'])]);
+
+    // First split the $stickers
+    $s_array = \explode(' ', $stickers);
+
+    // Setup some variables
+    $stickers_operations = [];
+
+    foreach ($s_array as $s_arr_value) {
+      switch ($s_arr_value) {
+        default:
+          // Ok so this is the list of stickers. Find'em all!
+          $this->wd->watchdog('traded', 'Default case, trying to find stickers for: @s', ['@s' => $s_arr_value]);
+          $input_stickers = $this->decodeStickers($all_stickers, $s_arr_value);
+          $key = 'traded';
+          $this->wd->watchdog('traded', 'Operation @k, decoded stickers: @s', ['@k' => $key, '@s' => print_r($input_stickers, TRUE)]);
+          $stickers_operations[] = [$key => $input_stickers];
+          break;
+      }
+    }
+    $this->wd->watchdog('traded', 'Found result_stickers: @rs', ['@rs' => print_r($result_stickers, TRUE)]);
+
+    // Now we should have in $result_stickers the list of things to do
+    // in to_add or to_remove
+    if (!empty($stickers_operations)) {
+      foreach ($stickers_operations as $a_sticker_operation) {
+        $query = "UPDATE player_sticker SET trading_capacity = trading_capacity-1 WHERE sticker_id IN (" . \implode(',', current($a_sticker_operation)) . ")"
+          . " AND player_id = " . $this->db()->quote($player_id);
+        $this->wd->watchdog('traded', 'Query to execute: @q', ['@q' => $query]);
+        $result = $this->db()->exec($query);
+        // Update log
+        $query = "INSERT INTO traded_log (player_id, album_id, sticker_id "
+          . " VALUES ";
+        $first_row = TRUE;
+        foreach (current($a_sticker_operation) as $a_sticker_traded) {
+          $query .= ($first_row ? "," : "") . "(" . $player_id . ", " . $album_id . ", " . $a_sticker_traded . ")";
+          $first_row = FALSE;
+        }
+        $query .= ';';
+        $this->wd->watchdog('traded', 'Log Query to execute: @q', ['@q' => $query]);
+        $result = $this->db()->exec($query);
+      }
+
+      return [
+        'success' => TRUE,
+        'msg' => 'Stickers traded have been updated for your album',
         'slack_attachments' => NULL,
       ];
     }

@@ -181,11 +181,19 @@ class PniServicesController {
     }
     $wd->watchdog('notice', 'Origin checked');
 
-    $message = [
-      'response_type' => 'ephemeral',
-      'text' => "A new totrade has been setup:",
-    ];
-    return $app->json($message);
+    $player_data = $ph->getSlackPlayer($ph->input->user_id);
+    if ($player_data['success']) {
+      $result = $ph->totrade($player_data['payload']['id'], $player_data['payload']['current_album_id'], $ph->input->text);
+      if ($result['success']) {
+        $message = [
+          'response_type' => 'ephemeral',
+          'text' => "A new totrade has been setup",
+          'attachments' => $result['slack_attachments']
+        ];
+        return $app->json($message);
+      }
+    }
+    return $app->json($this->error_msg);
   }
 
   public function traded(Request $request, Application $app) {
@@ -198,11 +206,19 @@ class PniServicesController {
     }
     $wd->watchdog('notice', 'Origin checked');
 
-    $message = [
-      'response_type' => 'ephemeral',
-      'text' => "A new traded has been setup:",
-    ];
-    return $app->json($message);
+    $player_data = $ph->getSlackPlayer($ph->input->user_id);
+    if ($player_data['success']) {
+      $result = $ph->traded($player_data['payload']['id'], $player_data['payload']['current_album_id'], $ph->input->text);
+      if ($result['success']) {
+        $message = [
+          'response_type' => 'ephemeral',
+          'text' => "A new traded has been setup",
+          'attachments' => $result['slack_attachments']
+        ];
+        return $app->json($message);
+      }
+    }
+    return $app->json($this->error_msg);
   }
 
   public function watch(Request $request, Application $app) {
