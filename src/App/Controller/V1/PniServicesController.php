@@ -158,6 +158,7 @@ class PniServicesController {
         ];
         $json = $app->json($message);
         $wd->watchdog('notice', 'Find results json @j', ['@j' => $json]);
+        $app['monolog']->addWarning("This is a test!", (array)$json);
         return $json;
       }
     }
