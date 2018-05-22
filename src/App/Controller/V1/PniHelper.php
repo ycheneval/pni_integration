@@ -691,12 +691,12 @@ class PniHelper {
     // in to_add or to_remove
     if (!empty($stickers_operations)) {
       foreach ($stickers_operations as $a_sticker_operation) {
-        $query = "UPDATE " . $this->__schema . ".player_sticker SET trading_capacity = trading_capacity-1 WHERE sticker_id IN (" . \implode(',', current($a_sticker_operation)) . ")"
+        $query = "UPDATE " . $this->__schema . ".player_sticker SET trading_capacity = GREATEST(0, trading_capacity - 1) WHERE sticker_id IN (" . \implode(',', current($a_sticker_operation)) . ")"
           . " AND player_id = " . $this->db()->quote($player_id);
         $this->wd->watchdog('traded', 'Query to execute: @q', ['@q' => $query]);
         $result = $this->db()->exec($query);
         // Update log
-        $query = "INSERT INTO " . $this->__schema . ".traded_log (player_id, album_id, sticker_id "
+        $query = "INSERT INTO " . $this->__schema . ".traded_log (player_id, album_id, sticker_id) "
           . " VALUES ";
         $first_row = TRUE;
         foreach (current($a_sticker_operation) as $a_sticker_traded) {
