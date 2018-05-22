@@ -762,7 +762,7 @@ class PniHelper {
     $attachments = [];
     if (!empty($stickers_operations)) {
       foreach ($stickers_operations as $a_sticker_operation) {
-        $query = "SELECT pl.nick, string_agg(ps.st.ident::character varying, ',') as stickers
+        $query = "SELECT pl.nick, string_agg(st.ident::character varying, ',') as stickers
           FROM " . $this->__schema . ".player_sticker ps "
           . " INNER JOIN player pl ON ps.player_id = pl.id "
         . " INNER JOIN sticker st ON ps.sticker_id = st.id "
