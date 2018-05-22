@@ -786,7 +786,7 @@ class PniHelper {
           ];
           $attachments[] = [
             'color' => "#7F8DE1",
-            'fields' => $an_attachment,
+            'fields' => [$an_attachment],
           ];
         }
       }
