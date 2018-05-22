@@ -719,8 +719,83 @@ class PniHelper {
       'msg' => 'There was an error processing your command, please review the syntax',
       'slack_attachments' => NULL,
     ];
-//    attachments.push({color: "#A094ED", fields: fields});
-//                });
-//                res.json({response_type: 'ephemeral', text: "Contacts matching '" + req.body.text + "':", attachments: attachments});
+  }
+
+  /**
+   * Find a sticker available to trade
+   *
+   */
+  public function find($player_id, $album_id, $stickers) {
+    $this->wd->watchdog('find', 'Trying to process @t for album @a and player @p', ['@t' => $stickers, '@a' => $album_id, '@p' => $player_id]);
+    $all_stickers = $this->getStickersByAlbum($album_id);
+    if (!$all_stickers['success']) {
+      // There are no stickers, return an error
+      return [
+        'success' => FALSE,
+        'error_message' => 'We cannot find stickers for this album!',
+      ];
+    }
+    $this->wd->watchdog('find', 'All Stickers found: @c', ['@c' => count($all_stickers['payload'])]);
+
+    // First split the $stickers
+    $s_array = \explode(' ', $stickers);
+
+    // Setup some variables
+    $stickers_operations = [];
+
+    foreach ($s_array as $s_arr_value) {
+      switch ($s_arr_value) {
+        default:
+          // Ok so this is the list of stickers. Find'em all!
+          $this->wd->watchdog('find', 'Default case, trying to find stickers for: @s', ['@s' => $s_arr_value]);
+          $input_stickers = $this->decodeStickers($all_stickers, $s_arr_value);
+          $key = 'find';
+          $this->wd->watchdog('find', 'Operation @k, decoded stickers: @s', ['@k' => $key, '@s' => print_r($input_stickers, TRUE)]);
+          $stickers_operations[] = [$key => $input_stickers];
+          break;
+      }
+    }
+    $this->wd->watchdog('find', 'Found result_stickers: @rs', ['@rs' => print_r($result_stickers, TRUE)]);
+
+    // Now we should have in $result_stickers the list of things to do
+    // in to_add or to_remove
+    $attachments = [];
+    if (!empty($stickers_operations)) {
+      foreach ($stickers_operations as $a_sticker_operation) {
+        $query = "SELECT pl.nick, string_agg(ps.sticker_id::character varying, ',') as stickers
+          FROM " . $this->__schema . ".player_sticker ps "
+          . " INNER JOIN player pl ON ps.player_id = pl.id "
+        . " INNER JOIN sticker st ON ps.sticker_id = st.id "
+        . " WHERE ps.sticker_id IN (" . \implode(',', current($a_sticker_operation)) . ") "
+          . " AND st.album_id = " . $album_id
+          . " AND ps.trading_capacity > 0 "
+          . " AND ps_player_id != " . $this->db()->quote($player_id)
+          . " GROUP BY pl.nick ";
+        $this->wd->watchdog('traded', 'Query to execute: @q', ['@q' => $query]);
+        $stickers_available = $this->db()->getCollection($query);
+        // Now get attachments to display the data
+        foreach ($stickers_available as $a_sticker_available) {
+          $an_attachment = new \stdClass;
+          $an_attachment->title = 'Player';
+          $an_attachment->value = 'You can trade ' . $a_sticker_available['stickers'] . ' with ' . $a_sticker_available['nick'];
+          $an_attachment->short = false;
+          $attachments[] = [
+            'color' => "#7F8DE1",
+            'fields' => $an_attachment,
+          ];
+        }
+      }
+
+      return [
+        'success' => TRUE,
+        'msg' => 'Stickers traded have been updated for your album',
+        'slack_attachments' => $attachments,
+      ];
+    }
+    return [
+      'success' => FALSE,
+      'msg' => 'There was an error processing your command, please review the syntax',
+      'slack_attachments' => NULL,
+    ];
   }
 }
