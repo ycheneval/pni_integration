@@ -151,6 +151,7 @@ class PniServicesController {
     if ($player_data['success']) {
       $result = $ph->find($player_data['payload']['id'], $player_data['payload']['current_album_id'], $ph->input->text);
       if ($result['success']) {
+        $wd->watchdog('notice', 'Find results @r', ['@r' => print_r($result, TRUE)]);
         $message = [
           'response_type' => 'ephemeral',
           'text' => "Find results",
