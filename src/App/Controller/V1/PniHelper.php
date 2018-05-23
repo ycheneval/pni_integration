@@ -919,7 +919,7 @@ class PniHelper {
           'value' => \implode(',', $traded_stickers_ident),
           'short' => TRUE,
         ];
-      $msg['slack_attachment'] = [
+      $msg['slack_attachments'] = [
           'color' => "#7F8DE1",
           'fields' => $fields,
         ];
