@@ -81,7 +81,10 @@ class PniHelper {
   //////////////////////////////////////////////////////////////////////////
 
   public function checkAuth() {
-    return (0 == strcmp($this->input->token, $_ENV['SLACK_APPTOKEN']));
+    $slack_correct_token = (0 == strcmp($this->input->token, $_ENV['SLACK_APPTOKEN']));
+    //Check correct channel
+    $slack_correct_channel = (0 == strcmp($this->input->channel_id, $_ENV['SLACK_CHANNEL']));
+    return ($slack_correct_channel && $slack_correct_token);
   }
 
   /**
@@ -403,7 +406,7 @@ class PniHelper {
   public function getPlayerStickers($player_id, $album_id) {
     $query = "SELECT
                 ps.owned,
-                pl.trading_capacity
+                ps.trading_capacity
             FROM " . $this->__schema . ".player_sticker ps
             WHERE ps.id = " . $this->db()->quote($player_id)
             . " AND ps.album_id = " . $this->db()->quote($album_id);
