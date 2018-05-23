@@ -83,7 +83,8 @@ class PniHelper {
   public function checkAuth() {
     $slack_correct_token = (0 == strcmp($this->input->token, $_ENV['SLACK_APPTOKEN']));
     //Check correct channel
-    $slack_correct_channel = (0 == strcmp($this->input->channel_id, $_ENV['SLACK_CHANNEL']));
+//    $slack_correct_channel = (0 == strcmp($this->input->channel_id, $_ENV['SLACK_CHANNEL']));
+    $slack_correct_channel = TRUE;
     return ($slack_correct_channel && $slack_correct_token);
   }
 
@@ -889,6 +890,7 @@ class PniHelper {
     if ($album_data['success']) {
       $msg['msg'] = 'Stats information for player' . $found_player_name;
       $collection_data = $this->getPlayerStickers($player_id, $album_id);
+      $this->wd->watchdog('stats', 'Found @s stickers for this player', ['@s' => count($collection_data['payload'])]);
       if ($collection_data['success']) {
         $fields[] = [
           'title' => 'Total number of stickers',
