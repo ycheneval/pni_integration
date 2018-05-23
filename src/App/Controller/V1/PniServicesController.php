@@ -139,7 +139,10 @@ class PniServicesController {
           'text' => "Stats for player " . $result['user_name'],
           'attachments' => $result['slack_attachments'],
         ];
-        return $app->json($message);
+        $json = $app->json($message);
+//        $wd->watchdog('notice', 'Find results json @j', ['@j' => $json]);
+        $app['monolog']->addWarning("Stats JSON data:", (array)$json);
+        return $json;
       }
     }
     $message = [
