@@ -129,12 +129,24 @@ class PniServicesController {
       return $app->json($this->error_msg);
     }
     $wd->watchdog('notice', 'Origin checked');
-
+    $player_data = $ph->getSlackPlayer($ph->input->user_id);
+    if ($player_data['success']) {
+      $result = $ph->stats($player_data['payload']['id'], $player_data['payload']['current_album_id'], $ph->input->text, TRUE);
+      if ($result['success']) {
+        $message = [
+          'response_type' => 'ephemeral',
+          'text' => "Stats for player " . $result['user_name'],
+          'attachments' => $result['slack_attachments'],
+        ];
+        return $app->json($message);
+      }
+    }
     $message = [
       'response_type' => 'ephemeral',
-      'text' => "A new stats has been setup:",
+      'text' => "Sorry, the stats feature is not implemented yet",
     ];
     return $app->json($message);
+
   }
 
   public function find(Request $request, Application $app) {
@@ -177,7 +189,7 @@ class PniServicesController {
 
     $message = [
       'response_type' => 'ephemeral',
-      'text' => "A new echange has been setup:",
+      'text' => "Sorry, the exchange feature is not implemented yet",
     ];
     return $app->json($message);
   }
@@ -244,7 +256,7 @@ class PniServicesController {
 
     $message = [
       'response_type' => 'ephemeral',
-      'text' => "A new watch has been setup:",
+      'text' => "Sorry, the watch feature is not implemented yet",
     ];
     return $app->json($message);
   }

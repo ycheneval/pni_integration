@@ -85,7 +85,7 @@ class PniHelper {
   }
 
   /**
-   * Return album data
+   * Return album data from its name
    *
    */
   public function getAlbum($album_name) {
@@ -101,6 +101,37 @@ class PniHelper {
                 al.url
             FROM " . $this->__schema . ".album al
             WHERE al.name = " . $this->db()->quote($album_name);
+    $data = $this->db()->getRow($query);
+    if ($data) {
+      return [
+        'success' => TRUE,
+        'payload' => $data,
+      ];
+    }
+    else {
+      return [
+        'success' => FALSE,
+        'payload' => NULL,
+      ];
+    }
+  }
+  /**
+   * Return album data from its name
+   *
+   */
+  public function getAlbumById($album_id) {
+    $query = "SELECT
+                al.id,
+                al.name,
+                al.year,
+                al.version,
+                al.location,
+                al.sport,
+                al.event_type,
+                al.manufacturer,
+                al.url
+            FROM " . $this->__schema . ".album al
+            WHERE al.id = " . $this->db()->quote($album_id);
     $data = $this->db()->getRow($query);
     if ($data) {
       return [
@@ -360,6 +391,36 @@ class PniHelper {
     else {
       return [
         'success' => FALSE,
+        'payload' => NULL,
+      ];
+    }
+  }
+
+  /**
+   * Return player data
+   *
+   */
+  public function getPlayerStickers($player_id, $album_id) {
+    $query = "SELECT
+                ps.owned,
+                pl.trading_capacity
+            FROM " . $this->__schema . ".player_sticker ps
+            WHERE ps.id = " . $this->db()->quote($player_id)
+            . " AND ps.album_id = " . $this->db()->quote($album_id);
+    $data = $this->db()->getCollection($query);
+    if ($data) {
+      return [
+        'success' => TRUE,
+        'player_id' => $player_id,
+        'album_id' => $album_id,
+        'payload' => $data,
+      ];
+    }
+    else {
+      return [
+        'success' => FALSE,
+        'player_id' => NULL,
+        'album_id' => NULL,
         'payload' => NULL,
       ];
     }
@@ -803,5 +864,54 @@ class PniHelper {
       'msg' => 'There was an error processing your command, please review the syntax',
       'slack_attachments' => NULL,
     ];
+  }
+
+  /**
+   * Get back some stats on the user
+   *
+   * @param type $player_id
+   * @param type $album_id
+   * @param type $player_name
+   * @return string
+   */
+  public function stats($player_id, $album_id, $player_name) {
+    // For now, does not take into account $player_name
+    $found_player_name = $this->input->user_name;
+    $album_data = $this->getAlbumById($album_id);
+    $stickers = $this->getStickersByAlbum($album_id);
+    $msg = [
+      'success' => FALSE,
+    ];
+    if ($album_data['success']) {
+      $msg['msg'] = 'Stats information for player' . $found_player_name;
+      $collection_data = $this->getPlayerStickers($player_id, $album_id);
+      if ($collection_data['success']) {
+        $fields[] = [
+          'title' => 'Total number of stickers',
+          'value' => count($stickers['payload']),
+          'short' => TRUE,
+        ];
+        // Find the number of owned stickers
+        $owned_stickers = array_filter($collection_data['payload'], function($an_object) { return $an_object['owned'];});
+        // Find the stickers available to trade
+        $traded_stickers = array_filter($collection_data['payload'], function($an_object) { return $an_object['trading_capacity'] > 0;});
+        $traded_stickers_ident = array_map(function($a_value) { return $a_values['ident']; }, $traded_stickers);
+        $fields[] = [
+          'title' => 'Stickers owned',
+          'value' => count($owned_stickers),
+          'short' => TRUE,
+        ];
+        $fields[] = [
+          'title' => 'Stickers available to trade',
+          'value' => \implode(',', $traded_stickers_ident),
+          'short' => TRUE,
+        ];
+      $msg['slack_attachment'] = [
+          'color' => "#7F8DE1",
+          'fields' => $fields,
+        ];
+      }
+    }
+    return $msg;
   }
 }
