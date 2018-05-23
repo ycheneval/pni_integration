@@ -406,6 +406,8 @@ class PniHelper {
    */
   public function getPlayerStickers($player_id, $album_id) {
     $query = "SELECT
+                st.id,
+                st.ident,
                 ps.owned,
                 ps.trading_capacity
             FROM " . $this->__schema . ".player_sticker ps
@@ -918,6 +920,7 @@ class PniHelper {
           'fields' => $fields,
         ];
       }
+      $msg['success'] = TRUE;
     }
     return $msg;
   }
