@@ -325,7 +325,11 @@ class PniHelper {
       }
       else {
         // No dashes
-        $result = array_merge($result, $this->findStickerByRef($album_id, $a_sticker_block));
+        $new_operation = $this->findStickerByRef($album_id, $a_sticker_block);
+        $this->wd->watchdog('decodeStickers', 'Found sticker @r for block @b', ['@b' => $a_sticker_block, '@r' => print_r($new_operation, TRUE)]);
+        if ($new_operation) {
+          $result = array_merge($result, $new_operation);
+        }
 //        $this->wd->watchdog('decodeStickers', 'No block: @b, found sticker @r', ['@b' => $a_sticker_block, '@r' => print_r($result, TRUE)]);
 //        foreach ($unref_stickers as $an_unref_sticker) {
 //          $result[] = $an_unref_sticker;
@@ -891,9 +895,9 @@ class PniHelper {
       'user_name' => $found_player_name,
     ];
     if ($album_data['success']) {
-      $msg['msg'] = 'Stats information for player' . $found_player_name;
+      $msg['msg'] = 'Stats information for player ' . $found_player_name;
       $collection_data = $this->getPlayerStickers($player_id, $album_id);
-      $this->wd->watchdog('stats', 'Found @s stickers for this player', ['@s' => count($collection_data['payload'])]);
+      $this->wd->watchdog('stats', 'Found @s stickers for this album', ['@s' => count($collection_data['payload'])]);
       if ($collection_data['success']) {
         $fields[] = [
           'title' => 'Total number of stickers',
