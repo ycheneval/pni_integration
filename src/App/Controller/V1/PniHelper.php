@@ -899,9 +899,10 @@ class PniHelper {
       $collection_data = $this->getPlayerStickers($player_id, $album_id);
       $this->wd->watchdog('stats', 'Found @s stickers for this album', ['@s' => count($collection_data['payload'])]);
       if ($collection_data['success']) {
+        $total_stickers_count = count($stickers['payload']);
         $fields[] = [
           'title' => 'Total number of stickers',
-          'value' => count($stickers['payload']),
+          'value' => $total_stickers_count,
           'short' => TRUE,
         ];
         // Find the number of owned stickers
@@ -909,15 +910,16 @@ class PniHelper {
         // Find the stickers available to trade
         $traded_stickers = array_filter($collection_data['payload'], function($an_object) { return $an_object['trading_capacity'] > 0;});
         $traded_stickers_ident = array_map(function($a_value) { return $a_value['ident']; }, $traded_stickers);
+        $owned_stickers_count = count($owned_stickers);
         $fields[] = [
-          'title' => 'Stickers owned',
-          'value' => count($owned_stickers),
+          'title' => 'Stickers owned (missing)',
+          'value' => $owned_stickers_count . ' (' . ($total_stickers_count - $owned_stickers_count) . ')',
           'short' => TRUE,
         ];
         $fields[] = [
           'title' => 'Stickers available to trade',
           'value' => \implode(',', $traded_stickers_ident),
-          'short' => TRUE,
+          'short' => FALSE,
         ];
         $attachments[] = [
           'color' => "#7F8DE1",
