@@ -132,6 +132,7 @@ class PniServicesController {
     $player_data = $ph->getSlackPlayer($ph->input->user_id);
     if ($player_data['success']) {
       $result = $ph->stats($player_data['payload']['id'], $player_data['payload']['current_album_id'], $ph->input->text, TRUE);
+      $wd->watchdog('stats', 'Got stats @s', ['@s' => print_r($result, TRUE)]);
       if ($result['success']) {
         $message = [
           'response_type' => 'ephemeral',

@@ -326,7 +326,7 @@ class PniHelper {
       else {
         // No dashes
         $result = array_merge($result, $this->findStickerByRef($album_id, $a_sticker_block));
-        $this->wd->watchdog('decodeStickers', 'No block: @b, found sticker @r', ['@b' => $a_sticker_block, '@r' => print_r($result, TRUE)]);
+//        $this->wd->watchdog('decodeStickers', 'No block: @b, found sticker @r', ['@b' => $a_sticker_block, '@r' => print_r($result, TRUE)]);
 //        foreach ($unref_stickers as $an_unref_sticker) {
 //          $result[] = $an_unref_sticker;
 //        }
@@ -886,6 +886,7 @@ class PniHelper {
     $stickers = $this->getStickersByAlbum($album_id);
     $msg = [
       'success' => FALSE,
+      'user_name' => $found_player_name,
     ];
     if ($album_data['success']) {
       $msg['msg'] = 'Stats information for player' . $found_player_name;
