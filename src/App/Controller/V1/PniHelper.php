@@ -908,7 +908,7 @@ class PniHelper {
         $owned_stickers = array_filter($collection_data['payload'], function($an_object) { return $an_object['owned'];});
         // Find the stickers available to trade
         $traded_stickers = array_filter($collection_data['payload'], function($an_object) { return $an_object['trading_capacity'] > 0;});
-        $traded_stickers_ident = array_map(function($a_value) { return $a_values['ident']; }, $traded_stickers);
+        $traded_stickers_ident = array_map(function($a_value) { return $a_value['ident']; }, $traded_stickers);
         $fields[] = [
           'title' => 'Stickers owned',
           'value' => count($owned_stickers),
