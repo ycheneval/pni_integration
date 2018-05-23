@@ -408,8 +408,9 @@ class PniHelper {
                 ps.owned,
                 ps.trading_capacity
             FROM " . $this->__schema . ".player_sticker ps
+            INNER JOIN sticker st ON ps.sticker_id = st.id
             WHERE ps.player_id = " . $this->db()->quote($player_id)
-            . " AND ps.album_id = " . $this->db()->quote($album_id);
+            . " AND st.album_id = " . $this->db()->quote($album_id);
     $data = $this->db()->getCollection($query);
     if ($data) {
       return [
