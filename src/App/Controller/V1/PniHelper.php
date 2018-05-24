@@ -375,7 +375,39 @@ class PniHelper {
    * Return player data
    *
    */
-  public function getSlackPlayer($slack_player_id) {
+  public function getPlayerByNick($player_name) {
+    $query = "SELECT
+                pl.id,
+                pl.external_id,
+                pl.external_type,
+                pl.first,
+                pl.last,
+                pl.nick,
+                pl.date_added,
+                pl.privacy,
+                pl.current_album_id
+            FROM " . $this->__schema . ".player pl
+            WHERE pl.nick = " . $this->db()->quote(\trim($player_name));
+    $data = $this->db()->getRow($query);
+    if ($data) {
+      return [
+        'success' => TRUE,
+        'payload' => $data,
+      ];
+    }
+    else {
+      return [
+        'success' => FALSE,
+        'payload' => NULL,
+      ];
+    }
+  }
+
+  /**
+   * Return player data
+   *
+   */
+  public function getPlayerByExternalId($slack_player_id) {
     $query = "SELECT
                 pl.id,
                 pl.external_id,
@@ -445,7 +477,7 @@ class PniHelper {
   public function checkandCreateUser($album_id) {
     switch ($this->input->client_type) {
       case 'slack':
-        $slack_player = $this->getSlackPlayer($this->input->user_id);
+        $slack_player = $this->getPlayerByExternalId($this->input->user_id);
 
         if ($slack_player['success']) {
           // Are we talking about the correct album?
@@ -476,7 +508,7 @@ class PniHelper {
         $result = $this->db()->exec($query);
         $this->wd->watchdog('checkandCreateUser', 'Got result as @r', ['@r' => print_r($result, TRUE)]);
         // Get player id
-        $slack_player = $this->getSlackPlayer($this->input->user_id);
+        $slack_player = $this->getPlayerByExternalId($this->input->user_id);
         if ($slack_player['success']) {
           return [
             'success' => TRUE,
@@ -878,6 +910,73 @@ class PniHelper {
   }
 
   /**
+   * Goal is to encode (implode) stickers. If $match_interval is FALSE, this is
+   * where the difficult part starts: we want to merge
+   * 1,2,3,4,5,6,9,10,11,12,13,14 to 1-6,9-14
+   *
+   * @param type $stickers
+   */
+  public function encodeStickers($stickers, $find_intervals = FALSE) {
+    if (!$find_intervals) {
+      return (\implode(',', $stickers));
+    }
+    else {
+      // Fun starts
+      $intervals = [];
+      // First sort them
+      if (!asort($stickers)) {
+        return (\implode(',', $stickers));
+      }
+      $current_interval = [
+        'start' => NULL,
+        'stop' => NULL,
+      ];
+      echo 'Stickers sorted ' . print_r($stickers, TRUE);
+      foreach ($stickers as $a_sticker) {
+        if (!is_numeric($a_sticker)) {
+          $intervals[] = [
+            'start' => $a_sticker,
+            'stop' => $a_sticker,
+          ];
+          continue;
+        }
+        $cur_sticker = $a_sticker;
+        if ($current_interval['stop'] && ($current_interval['stop'] === ($a_sticker - 1))) {
+          $current_interval['stop'] = $a_sticker;
+        }
+        else {
+          // Start or End of the interval
+          if (!$current_interval['start']) {
+            $current_interval['start'] = $a_sticker;
+            $current_interval['stop'] = $a_sticker;
+          }
+          else {
+            $intervals[] = $current_interval;
+            $current_interval['start'] = $a_sticker;
+            $current_interval['stop'] = $a_sticker;
+          }
+        }
+      }
+      $intervals[] = $current_interval;
+      echo 'Intervals ' . print_r($intervals, TRUE);
+      // Now we should have all intervals, output them
+      $result_array = [];
+      foreach ($intervals as $an_interval) {
+        if ($an_interval['start'] == $an_interval['stop']) {
+          $result_array = array_merge($result_array,  array($an_interval['start']));
+        }
+        elseif (($an_interval['start'] + 1) == $an_interval['stop']) {
+          $result_array = array_merge($result_array,  $an_interval);
+        }
+        else {
+          $result_array = array_merge($result_array,  array(\implode('-', $an_interval)));
+        }
+      }
+      return (\implode(',', $result_array));
+    }
+  }
+
+  /**
    * Get back some stats on the user
    *
    * @param type $player_id
@@ -887,7 +986,9 @@ class PniHelper {
    */
   public function stats($player_id, $album_id, $player_name) {
     // For now, does not take into account $player_name
-    $found_player_name = $this->input->user_name;
+//    $found_player_name = $this->input->user_name;
+    $found_player_info = $this->getPlayerByNick($player_name);
+    $found_player_info = ($found_player_info['success'] ? $found_player_info : $this->getPlayer($player_id));
     $album_data = $this->getAlbumById($album_id);
     $stickers = $this->getStickersByAlbum($album_id);
     $msg = [
@@ -895,8 +996,8 @@ class PniHelper {
       'user_name' => $found_player_name,
     ];
     if ($album_data['success']) {
-      $msg['msg'] = 'Stats information for player ' . $found_player_name;
-      $collection_data = $this->getPlayerStickers($player_id, $album_id);
+      $msg['msg'] = 'Stats information for player ' . $found_player_info['payload']['name'];
+      $collection_data = $this->getPlayerStickers($found_player_info['payload']['id'], $album_id);
       $this->wd->watchdog('stats', 'Found @s stickers for this album', ['@s' => count($collection_data['payload'])]);
       if ($collection_data['success']) {
         $total_stickers_count = count($stickers['payload']);
@@ -907,18 +1008,33 @@ class PniHelper {
         ];
         // Find the number of owned stickers
         $owned_stickers = array_filter($collection_data['payload'], function($an_object) { return $an_object['owned'];});
-        // Find the stickers available to trade
-        $traded_stickers = array_filter($collection_data['payload'], function($an_object) { return $an_object['trading_capacity'] > 0;});
-        $traded_stickers_ident = array_map(function($a_value) { return $a_value['ident']; }, $traded_stickers);
         $owned_stickers_count = count($owned_stickers);
         $fields[] = [
           'title' => 'Stickers owned (missing)',
           'value' => $owned_stickers_count . ' (' . ($total_stickers_count - $owned_stickers_count) . ')',
           'short' => TRUE,
         ];
+        // Display the stickers owned or missing (the least of those 2 numbers)
+        if ($owned_stickers_count < ($total_stickers_count - $owned_stickers_count)) {
+          $title = 'Owned stickers list';
+          $ownedormissing_stickers_ident = array_map(function($a_value) { return $a_value['ident']; }, $owned_stickers);
+        }
+        else {
+          $title = 'Missing stickers list';
+          $missing_stickers = array_filter($collection_data['payload'], function($an_object) { return !$an_object['owned'];});
+          $ownedormissing_stickers_ident = array_map(function($a_value) { return $a_value['ident']; }, $missing_stickers);
+        }
         $fields[] = [
           'title' => 'Stickers available to trade',
-          'value' => \implode(',', $traded_stickers_ident),
+          'value' => $this->encodeStickers($ownedormissing_stickers_ident, TRUE),
+          'short' => FALSE,
+        ];
+        // Find the stickers available to trade
+        $traded_stickers = array_filter($collection_data['payload'], function($an_object) { return $an_object['trading_capacity'] > 0;});
+        $traded_stickers_ident = array_map(function($a_value) { return $a_value['ident']; }, $traded_stickers);
+        $fields[] = [
+          'title' => 'Stickers available to trade',
+          'value' => $this->encodeStickers($traded_stickers_ident, TRUE),
           'short' => FALSE,
         ];
         $attachments[] = [
