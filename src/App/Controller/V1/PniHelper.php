@@ -1025,7 +1025,7 @@ class PniHelper {
           $ownedormissing_stickers_ident = array_map(function($a_value) { return $a_value['ident']; }, $missing_stickers);
         }
         $fields[] = [
-          'title' => 'Stickers available to trade',
+          'title' => $title,
           'value' => $this->encodeStickers($ownedormissing_stickers_ident, TRUE),
           'short' => FALSE,
         ];
