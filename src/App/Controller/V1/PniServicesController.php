@@ -80,7 +80,7 @@ class PniServicesController {
     }
     $wd->watchdog('notice', 'Origin checked');
 
-    $player_data = $ph->getSlackPlayer($ph->input->user_id);
+    $player_data = $ph->getPlayerByExternalId($ph->input->user_id);
     if ($player_data['success']) {
       $result = $ph->got($player_data['payload']['id'], $player_data['payload']['current_album_id'], $ph->input->text);
       if ($result['success']) {
@@ -105,7 +105,7 @@ class PniServicesController {
     }
     $wd->watchdog('notice', 'Origin checked');
 
-    $player_data = $ph->getSlackPlayer($ph->input->user_id);
+    $player_data = $ph->getPlayerByExternalId($ph->input->user_id);
     if ($player_data['success']) {
       $result = $ph->got($player_data['payload']['id'], $player_data['payload']['current_album_id'], $ph->input->text, TRUE);
       if ($result['success']) {
@@ -129,7 +129,7 @@ class PniServicesController {
       return $app->json($this->error_msg);
     }
     $wd->watchdog('notice', 'Origin checked');
-    $player_data = $ph->getSlackPlayer($ph->input->user_id);
+    $player_data = $ph->getPlayerByExternalId($ph->input->user_id);
     if ($player_data['success']) {
       $result = $ph->stats($player_data['payload']['id'], $player_data['payload']['current_album_id'], $ph->input->text, TRUE);
       $wd->watchdog('stats', 'Got stats @s', ['@s' => print_r($result, TRUE)]);
@@ -163,7 +163,7 @@ class PniServicesController {
     }
     $wd->watchdog('notice', 'Origin checked');
 
-    $player_data = $ph->getSlackPlayer($ph->input->user_id);
+    $player_data = $ph->getPlayerByExternalId($ph->input->user_id);
     if ($player_data['success']) {
       $result = $ph->find($player_data['payload']['id'], $player_data['payload']['current_album_id'], $ph->input->text);
       if ($result['success']) {
@@ -208,7 +208,7 @@ class PniServicesController {
     }
     $wd->watchdog('notice', 'Origin checked');
 
-    $player_data = $ph->getSlackPlayer($ph->input->user_id);
+    $player_data = $ph->getPlayerByExternalId($ph->input->user_id);
     if ($player_data['success']) {
       $result = $ph->totrade($player_data['payload']['id'], $player_data['payload']['current_album_id'], $ph->input->text);
       if ($result['success']) {
@@ -233,7 +233,7 @@ class PniServicesController {
     }
     $wd->watchdog('notice', 'Origin checked');
 
-    $player_data = $ph->getSlackPlayer($ph->input->user_id);
+    $player_data = $ph->getPlayerByExternalId($ph->input->user_id);
     if ($player_data['success']) {
       $result = $ph->traded($player_data['payload']['id'], $player_data['payload']['current_album_id'], $ph->input->text);
       if ($result['success']) {
