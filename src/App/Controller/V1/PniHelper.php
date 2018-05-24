@@ -931,7 +931,7 @@ class PniHelper {
         'start' => NULL,
         'stop' => NULL,
       ];
-      echo 'Stickers sorted ' . print_r($stickers, TRUE);
+//      echo 'Stickers sorted ' . print_r($stickers, TRUE);
       foreach ($stickers as $a_sticker) {
         if (!is_numeric($a_sticker)) {
           $intervals[] = [
@@ -958,7 +958,7 @@ class PniHelper {
         }
       }
       $intervals[] = $current_interval;
-      echo 'Intervals ' . print_r($intervals, TRUE);
+//      echo 'Intervals ' . print_r($intervals, TRUE);
       // Now we should have all intervals, output them
       $result_array = [];
       foreach ($intervals as $an_interval) {
