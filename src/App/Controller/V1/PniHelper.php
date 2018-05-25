@@ -1093,7 +1093,7 @@ class PniHelper {
     $stickers = $this->getStickersByAlbum($album_id);
     $msg = [
       'success' => FALSE,
-      'user_name' => $found_player_info['payload']['nick'],
+      'user_name' => $found_player_info['payload']['nick'] . ($found_player_info['payload']['id'] == $player_id ? ' (you)' : ''),
     ];
     if ($album_data['success']) {
       $msg['msg'] = 'Stats information for player ' . $found_player_info['payload']['name'];
