@@ -700,7 +700,7 @@ class PniHelper {
           'color' => "#7F8DE1",
           'fields' => [
             [
-              'title' => ($reverse ? 'Missing' : 'Owned') . ' stickers:',
+              'title' => ($reverse ? 'Missing' : 'Owned') . ' stickers (' . count($result_stickers_ident) . '):',
               'value' => $this->encodeStickers($result_stickers_ident, TRUE),
               'short' => FALSE
             ],
