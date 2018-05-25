@@ -621,6 +621,7 @@ class PniHelper {
 
     // Setup some variables
     $stickers_operations = [];
+    $slack_attachments = NULL;
 
     //Handling missing and got in the same routine
     if ($reverse) {
@@ -680,10 +681,33 @@ class PniHelper {
 //        $this->wd->watchdog('got', 'Remove Query to execute: @q', ['@q' => $query]);
 //        $result = $this->db()->exec($query);
 //      }
+      $collection_data = $this->getPlayerStickers($player_id, $album_id);
+      if ($collection_data['success']) {
+        if ($reverse) {
+          // /missing command was input, now returns the list of missing stickers
+          // Find the missing stickers stickers
+          $missing_stickers = array_filter($collection_data['payload'], function($an_object) { return !$an_object['owned']; });
+          $result_stickers_ident = array_map(function($a_value) { return $a_value['ident']; }, $missing_stickers);
+        }
+        else {
+          $missing_stickers = array_filter($collection_data['payload'], function($an_object) { return $an_object['owned']; });
+          $result_stickers_ident = array_map(function($a_value) { return $a_value['ident']; }, $missing_stickers);
+        }
+        $slack_attachments[] = [
+          'color' => "#7F8DE1",
+          'fields' => [
+            [
+              'title' => 'Missing stickers:',
+              'value' => $this->encodeStickers($missing_stickers_ident, TRUE),
+              'short' => FALSE
+            ],
+          ],
+        ];
+      }
       return [
         'success' => TRUE,
         'msg' => 'Stickers have been processed and added (or removed) from your album',
-        'slack_attachments' => NULL,
+        'slack_attachments' => $slack_attachments,
       ];
     }
     return [
@@ -888,7 +912,7 @@ class PniHelper {
           . " AND st.album_id = " . $album_id
           . " AND ps.trading_capacity > 0 "
           . " AND ps.player_id != " . $this->db()->quote($player_id)
-          . " GROUP BY pl.nick ORDER BY st.ident ";
+          . " GROUP BY pl.nick ";
         $this->wd->watchdog('traded', 'Query to execute: @q', ['@q' => $query]);
         $stickers_available = $this->db()->getCollection($query);
         // Now get attachments to display the data
