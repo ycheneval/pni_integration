@@ -888,7 +888,7 @@ class PniHelper {
           . " AND st.album_id = " . $album_id
           . " AND ps.trading_capacity > 0 "
           . " AND ps.player_id != " . $this->db()->quote($player_id)
-          . " GROUP BY pl.nick ";
+          . " GROUP BY pl.nick ORDER BY st.ident ";
         $this->wd->watchdog('traded', 'Query to execute: @q', ['@q' => $query]);
         $stickers_available = $this->db()->getCollection($query);
         // Now get attachments to display the data
@@ -898,7 +898,7 @@ class PniHelper {
 //          $an_attachment->value = 'You can trade ' . $a_sticker_available['stickers'] . ' with ' . $a_sticker_available['nick'];
 //          $an_attachment->short = false;
           $an_attachment = [
-            'title' => 'Player',
+            'title' => 'Trading opportunity:',
             'value' => 'You can trade ' . $a_sticker_available['stickers'] . ' with ' . $a_sticker_available['nick'],
             'short' => FALSE
           ];
