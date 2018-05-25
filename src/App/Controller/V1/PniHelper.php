@@ -848,7 +848,7 @@ class PniHelper {
     switch ($stickers) {
       case '-missing':
         // In this case, we need to use missing stickers as input
-        $collection_data = $this->getPlayerStickers($found_player_info['payload']['id'], $album_id);
+        $collection_data = $this->getPlayerStickers($player_id, $album_id);
         if ($collection_data['success']) {
           // Find the missing stickers of owned stickers
           $missing_stickers = array_filter($collection_data['payload'], function($an_object) { return !$an_object['owned'];});
