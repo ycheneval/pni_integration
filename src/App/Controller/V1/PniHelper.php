@@ -852,7 +852,8 @@ class PniHelper {
         if ($collection_data['success']) {
           // Find the missing stickers of owned stickers
           $missing_stickers = array_filter($collection_data['payload'], function($an_object) { return !$an_object['owned'];});
-          $stickers_operations[] = ['find' => $missing_stickers];
+          $missing_stickers_ident = array_map(function($a_value) { return $a_value['ident']; }, $missing_stickers);
+          $stickers_operations[] = ['find' => $missing_stickers_ident];
         }
         break;
 
@@ -872,7 +873,7 @@ class PniHelper {
         break;
     }
 
-    $this->wd->watchdog('find', 'Found result_stickers: @rs', ['@rs' => print_r($result_stickers, TRUE)]);
+    $this->wd->watchdog('find', 'Found Sticker operation: @rs', ['@rs' => print_r($stickers_operations, TRUE)]);
 
     // Now we should have in $result_stickers the list of things to do
     // in to_add or to_remove
