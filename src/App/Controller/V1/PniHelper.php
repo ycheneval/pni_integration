@@ -999,7 +999,7 @@ class PniHelper {
         }
       }
       $intervals[] = $current_interval;
-//      echo 'Intervals ' . print_r($intervals, TRUE);
+      echo 'Intervals ' . print_r($intervals, TRUE);
       // Now we should have all intervals, output them
       $result_array = [];
       foreach ($intervals as $an_interval) {
