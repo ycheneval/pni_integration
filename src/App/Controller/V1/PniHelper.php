@@ -841,24 +841,37 @@ class PniHelper {
     }
     $this->wd->watchdog('find', 'All Stickers found: @c', ['@c' => count($all_stickers['payload'])]);
 
-    // First split the $stickers
-    $s_array = \explode(' ', $stickers);
-
     // Setup some variables
     $stickers_operations = [];
 
-    foreach ($s_array as $s_arr_value) {
-      switch ($s_arr_value) {
-        default:
+    // Check if $stickers is not a special command
+    switch ($stickers) {
+      case '-missing':
+        // In this case, we need to use missing stickers as input
+        $collection_data = $this->getPlayerStickers($found_player_info['payload']['id'], $album_id);
+        if ($collection_data['success']) {
+          // Find the missing stickers of owned stickers
+          $missing_stickers = array_filter($collection_data['payload'], function($an_object) { return !$an_object['owned'];});
+          $stickers_operations[] = ['find' => $missing_stickers];
+        }
+        break;
+
+      default:
+        // Std operation, $stickers contains a list of comma separated stickers
+        // First split the $stickers
+        $s_array = \explode(' ', $stickers);
+
+        foreach ($s_array as $s_arr_value) {
           // Ok so this is the list of stickers. Find'em all!
-          $this->wd->watchdog('find', 'Default case, trying to find stickers for: @s', ['@s' => $s_arr_value]);
+//          $this->wd->watchdog('find', 'Default case, trying to find stickers for: @s', ['@s' => $s_arr_value]);
           $input_stickers = $this->decodeStickers($all_stickers, $s_arr_value);
           $key = 'find';
-          $this->wd->watchdog('find', 'Operation @k, decoded stickers: @s', ['@k' => $key, '@s' => print_r($input_stickers, TRUE)]);
+//          $this->wd->watchdog('find', 'Operation @k, decoded stickers: @s', ['@k' => $key, '@s' => print_r($input_stickers, TRUE)]);
           $stickers_operations[] = [$key => $input_stickers];
-          break;
-      }
+        }
+        break;
     }
+
     $this->wd->watchdog('find', 'Found result_stickers: @rs', ['@rs' => print_r($result_stickers, TRUE)]);
 
     // Now we should have in $result_stickers the list of things to do
