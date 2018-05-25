@@ -1042,6 +1042,18 @@ class PniHelper {
   }
 
   /**
+   * Return the list of players that are on the same album than you
+   *
+   * @param type $player_id
+   * @param type $album_id
+   * @param type $player_name
+   * @return string
+   */
+  public function players($player_id, $album_id) {
+
+  }
+
+  /**
    * Get back some stats on the user
    *
    * @param type $player_id
@@ -1058,7 +1070,7 @@ class PniHelper {
     $stickers = $this->getStickersByAlbum($album_id);
     $msg = [
       'success' => FALSE,
-      'user_name' => $found_player_name,
+      'user_name' => $found_player_info['payload']['name'],
     ];
     if ($album_data['success']) {
       $msg['msg'] = 'Stats information for player ' . $found_player_info['payload']['name'];
