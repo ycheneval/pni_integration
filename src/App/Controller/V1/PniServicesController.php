@@ -86,7 +86,7 @@ class PniServicesController {
       if ($result['success']) {
         $message = [
           'response_type' => 'ephemeral',
-          'text' => "Operation result   ",
+//          'text' => "Operation result   ",
           'attachments' => $result['slack_attachments']
         ];
         return $app->json($message);
@@ -111,7 +111,7 @@ class PniServicesController {
       if ($result['success']) {
         $message = [
           'response_type' => 'ephemeral',
-          'text' => "Operation result",
+//          'text' => "Missing command result:",
           'attachments' => $result['slack_attachments']
         ];
         return $app->json($message);
