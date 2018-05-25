@@ -974,7 +974,7 @@ class PniHelper {
       ];
 //      echo 'Stickers sorted ' . print_r($stickers, TRUE);
       foreach ($stickers as $a_sticker) {
-        if (!is_numeric($a_sticker)) {
+        if ((0 == intval($a_sticker)) && ($a_sticker != '0')) {
           $intervals[] = [
             'start' => $a_sticker,
             'stop' => $a_sticker,
