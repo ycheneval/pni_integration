@@ -763,16 +763,36 @@ class PniHelper {
     // in to_add or to_remove
     if (!empty($stickers_operations)) {
       foreach ($stickers_operations as $a_sticker_operation) {
+        if (empty(current($a_sticker_operation))) {
+          continue;
+        }
         $query = "UPDATE " . $this->__schema . ".player_sticker SET trading_capacity = trading_capacity+1 WHERE sticker_id IN (" . \implode(',', current($a_sticker_operation)) . ")"
           . " AND player_id = " . $this->db()->quote($player_id);
         $this->wd->watchdog('totrade', 'Query to execute: @q', ['@q' => $query]);
         $result = $this->db()->exec($query);
       }
 
+      $collection_data = $this->getPlayerStickers($player_id, $album_id);
+      if ($collection_data['success']) {
+        // Find the list of stickers for trade
+        $to_trade_stickers = array_filter($collection_data['payload'], function($an_object) { return $an_object['trading_capacity'] > 0;});
+        $result_stickers_ident = array_map(function($a_value) { return $a_value['ident']; }, $to_trade_stickers);
+        $slack_attachments[] = [
+          'color' => "#7F8DE1",
+          'fields' => [
+            [
+              'title' => 'Stickers for trade (' . count($result_stickers_ident) . '):',
+              'value' => $this->encodeStickers($result_stickers_ident, TRUE),
+              'short' => FALSE
+            ],
+          ],
+        ];
+      }
+
       return [
         'success' => TRUE,
         'msg' => 'Stickers to trade have been updated for your album',
-        'slack_attachments' => NULL,
+        'slack_attachments' => $slack_attachments,
       ];
     }
     return [
@@ -822,6 +842,9 @@ class PniHelper {
     // in to_add or to_remove
     if (!empty($stickers_operations)) {
       foreach ($stickers_operations as $a_sticker_operation) {
+        if (empty(current($a_sticker_operation))) {
+          continue;
+        }
         $query = "UPDATE " . $this->__schema . ".player_sticker SET trading_capacity = GREATEST(0, trading_capacity - 1) WHERE sticker_id IN (" . \implode(',', current($a_sticker_operation)) . ")"
           . " AND player_id = " . $this->db()->quote($player_id);
         $this->wd->watchdog('traded', 'Query to execute: @q', ['@q' => $query]);
