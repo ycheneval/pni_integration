@@ -664,6 +664,9 @@ class PniHelper {
     // in to_add or to_remove
     if (!empty($stickers_operations)) {
       foreach ($stickers_operations as $a_sticker_operation) {
+        if (empty(current($a_sticker_operation))) {
+          continue;
+        }
         $query = "UPDATE " . $this->__schema . ".player_sticker SET owned = " . (key($a_sticker_operation) == 'to_add' ? "TRUE" : "FALSE") . " WHERE sticker_id IN (" . \implode(',', current($a_sticker_operation)) . ")"
           . " AND player_id = " . $this->db()->quote($player_id);
         $this->wd->watchdog('got', 'Query to execute: @q', ['@q' => $query]);
@@ -697,7 +700,7 @@ class PniHelper {
           'color' => "#7F8DE1",
           'fields' => [
             [
-              'title' => 'Missing stickers:',
+              'title' => ($reverse ? 'Missing' : 'Owned') . ' stickers:',
               'value' => $this->encodeStickers($missing_stickers_ident, TRUE),
               'short' => FALSE
             ],
