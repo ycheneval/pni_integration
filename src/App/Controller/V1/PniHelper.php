@@ -965,7 +965,31 @@ class PniHelper {
       // Fun starts
       $intervals = [];
       // First sort them
-      if (!asort($stickers)) {
+      if (!uasort($stickers, function($a, $b) {
+        $a_intval = intval($a);
+        $b_intval = intval($b);
+        if (0 == $a_intval && '0' != $a) {
+          if (0 == $b_intval && '0' != $b) {
+            // Both are not numeric, use strcmp
+            return (strcmp($a, $b));
+          }
+          else {
+            // $b is numeric, $a is string, $b comes first
+            return 1;
+          }
+        }
+        else {
+          if (0 == $b_intval && '0' != $b) {
+            // $a is numeric, $b is string, $a comes first
+            return -1;
+          }
+          else {
+            // Both are numeric
+            return ($a > $b);
+          }
+        }
+      }
+      )) {
         return (\implode(',', $stickers));
       }
       $current_interval = [
@@ -981,25 +1005,25 @@ class PniHelper {
           ];
           continue;
         }
-        $cur_sticker = $a_sticker;
-        if ($current_interval['stop'] && ($current_interval['stop'] === ($a_sticker - 1))) {
-          $current_interval['stop'] = $a_sticker;
+        $cur_sticker = intval($a_sticker);
+        if ($current_interval['stop'] && ($current_interval['stop'] === ($cur_sticker - 1))) {
+          $current_interval['stop'] = $cur_sticker;
         }
         else {
           // Start or End of the interval
           if (!$current_interval['start']) {
-            $current_interval['start'] = $a_sticker;
-            $current_interval['stop'] = $a_sticker;
+            $current_interval['start'] = $cur_sticker;
+            $current_interval['stop'] = $cur_sticker;
           }
           else {
             $intervals[] = $current_interval;
-            $current_interval['start'] = $a_sticker;
-            $current_interval['stop'] = $a_sticker;
+            $current_interval['start'] = $cur_sticker;
+            $current_interval['stop'] = $cur_sticker;
           }
         }
       }
       $intervals[] = $current_interval;
-      echo 'Intervals ' . print_r($intervals, TRUE);
+//      echo 'Intervals ' . print_r($intervals, TRUE);
       // Now we should have all intervals, output them
       $result_array = [];
       foreach ($intervals as $an_interval) {
