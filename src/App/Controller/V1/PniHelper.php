@@ -693,15 +693,15 @@ class PniHelper {
           $result_stickers_ident = array_map(function($a_value) { return $a_value['ident']; }, $missing_stickers);
         }
         else {
-          $missing_stickers = array_filter($collection_data['payload'], function($an_object) { return $an_object['owned']; });
-          $result_stickers_ident = array_map(function($a_value) { return $a_value['ident']; }, $missing_stickers);
+          $owned_stickers = array_filter($collection_data['payload'], function($an_object) { return $an_object['owned']; });
+          $result_stickers_ident = array_map(function($a_value) { return $a_value['ident']; }, $owned_stickers);
         }
         $slack_attachments[] = [
           'color' => "#7F8DE1",
           'fields' => [
             [
               'title' => ($reverse ? 'Missing' : 'Owned') . ' stickers:',
-              'value' => $this->encodeStickers($missing_stickers_ident, TRUE),
+              'value' => $this->encodeStickers($result_stickers_ident, TRUE),
               'short' => FALSE
             ],
           ],
