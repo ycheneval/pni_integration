@@ -1007,7 +1007,7 @@ class PniHelper {
           $result_array = array_merge($result_array,  array($an_interval['start']));
         }
         elseif (($an_interval['start'] + 1) == $an_interval['stop']) {
-          $result_array = array_merge($result_array,  $an_interval);
+          $result_array = array_merge($result_array,  array(\implode(',', $an_interval)));
         }
         else {
           $result_array = array_merge($result_array,  array(\implode('-', $an_interval)));
