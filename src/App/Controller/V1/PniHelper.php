@@ -1051,9 +1051,10 @@ class PniHelper {
         $available_at_other = $this->getStickersAvailableForPlayerMatching($missing_own, $album_id, NULL, $other_player_id);
         if ($available_at_other) {
           foreach ($available_at_other as $a_sticker_available) {
+            $count_sticker_available = count(\explode(',', $a_sticker_available['stickers']));
             $an_attachment = [
-              'title' => 'Trading opportunity:',
-              'value' => 'You can get ' . $a_sticker_available['stickers'] . ' from ' . $a_sticker_available['nick'],
+              'title' => 'Trading opportunity from ' .  $a_sticker_available['nick'] . ' ('. $count_sticker_available. '):',
+              'value' => 'You can get ' . $a_sticker_available['stickers'] . ' from him',
               'short' => FALSE,
             ];
             $attachments[] = [
@@ -1064,7 +1065,7 @@ class PniHelper {
         }
         else {
           $an_attachment = [
-            'title' => 'Trading opportunity:',
+            'title' => 'Trading opportunity from ' . $other_player_info['payload']['nick']. ':',
             'value' => 'Unfortunately, ' . $other_player_info['payload']['nick'] . ' does not own any of your missing stickers',
             'short' => FALSE,
           ];
@@ -1076,9 +1077,10 @@ class PniHelper {
         $available_at_own = $this->getStickersAvailableForPlayerMatching($missing_other, $album_id, NULL, $player_id);
         if ($available_at_own) {
           foreach ($available_at_own as $a_sticker_available) {
+            $count_sticker_available = count(\explode(',', $a_sticker_available['stickers']));
             $an_attachment = [
-              'title' => 'Trading opportunity:',
-              'value' => 'You can give ' . $a_sticker_available['stickers'] . ' to ' . $a_sticker_available['nick'],
+              'title' => 'Trading opportunity with ' . $a_sticker_available['nick'] . ' ('. $count_sticker_available. '):',
+              'value' => 'You can give him ' . $a_sticker_available['stickers'],
               'short' => FALSE,
             ];
             $attachments[] = [
@@ -1089,7 +1091,7 @@ class PniHelper {
         }
         else {
           $an_attachment = [
-            'title' => 'Trading opportunity:',
+            'title' => 'Trading opportunity with ' . $other_player_info['payload']['nick']. ':',
             'value' => 'Unfortunately, you do not own any stickers that ' . $other_player_info['payload']['nick'] . ' is missing',
             'short' => FALSE,
           ];
