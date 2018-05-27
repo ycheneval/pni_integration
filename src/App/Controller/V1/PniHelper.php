@@ -459,11 +459,14 @@ class PniHelper {
             . " AND st.album_id = " . $this->db()->quote($album_id);
     $data = $this->db()->getCollection($query);
     if ($data) {
+      $sticker_keys = array_map(function($an_object) { return $an_object['id']; }, $data);
+      //echo 'Result: ' . print_r($sticker_keys, TRUE);
+      $payload = array_combine($sticker_keys, $data);
       return [
         'success' => TRUE,
         'player_id' => $player_id,
         'album_id' => $album_id,
-        'payload' => $data,
+        'payload' => $payload,
       ];
     }
     else {
