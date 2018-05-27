@@ -1383,7 +1383,7 @@ class PniHelper {
         ];
       }
       $msg['slack_attachments'] = $attachments;
-      $msg['main_title'] = $stickers_list . " sticker" . (count($attachments) > 1 ? 's' : '') . ' found' . ($ma < count($stickers_list) ? ', only the first ' . $ma. ' are displayed' : '');
+      $msg['main_title'] = count($stickers_list) . " sticker" . (count($attachments) > 1 ? 's' : '') . ' found' . ($ma < count($stickers_list) ? ', only the first ' . $ma. ' are displayed' : '');
       $msg['success'] = TRUE;
     }
 
