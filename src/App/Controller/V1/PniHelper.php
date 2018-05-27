@@ -1343,6 +1343,7 @@ class PniHelper {
     if (!empty($stickers_list)) {
       $attachments = [];
       foreach ($stickers_list as $a_sticker) {
+        $fields = [];
         if (empty($a_sticker)) {
           continue;
         }
@@ -1352,6 +1353,12 @@ class PniHelper {
           'value' => $all_stickers['payload'][$a_sticker]['name'],
           'short' => TRUE,
         ];
+        $fields[] = [
+          'title' => 'Number',
+          'value' => $all_stickers['payload'][$a_sticker]['ident'],
+          'short' => TRUE,
+        ];
+        $this->wd->watchdog('sticker', 'For sticker @s, current fields @f', ['@s' => $a_sticker, '@f' => print_r($fields, TRUE)]);
         if (!empty($all_stickers['payload'][$a_sticker]['team_name'])) {
           $fields[] = [
             'title' => 'Team',
@@ -1359,7 +1366,9 @@ class PniHelper {
             'short' => TRUE,
           ];
         }
+        $this->wd->watchdog('sticker', 'For sticker @s, current fields @f', ['@s' => $a_sticker, '@f' => print_r($fields, TRUE)]);
         if ($display_owned_information) {
+          $this->wd->watchdog('sticker', 'For sticker @s, collection data @cd', ['@s' => $a_sticker, '@cd' => print_r($collection_data['payload'][$a_sticker], TRUE)]);
           $fields[] = [
             'title' => 'Owned',
             'value' => ($collection_data['payload'][$a_sticker]['owned'] ? 'Yes' : 'No'),
