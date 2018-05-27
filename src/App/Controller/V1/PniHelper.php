@@ -1053,7 +1053,7 @@ class PniHelper {
           foreach ($available_at_other as $a_sticker_available) {
             $count_sticker_available = count(\explode(',', $a_sticker_available['stickers']));
             $an_attachment = [
-              'title' => $a_sticker_available['nick'] . ' to you: '. $count_sticker_available,
+              'title' => $a_sticker_available['nick'] . ' to you: ' . $count_sticker_available,
               'value' => 'You can get ' . $a_sticker_available['stickers'] . ' from him',
               'short' => FALSE,
             ];
@@ -1065,6 +1065,7 @@ class PniHelper {
         }
         else {
           $an_attachment = [
+            'title' => $other_player_info['payload']['nick'] . ' to you: 0',
             'title' => 'Trading opportunity from ' . $other_player_info['payload']['nick']. ':',
             'value' => 'Unfortunately, ' . $other_player_info['payload']['nick'] . ' does not own any of your missing stickers',
             'short' => FALSE,
@@ -1079,7 +1080,7 @@ class PniHelper {
           foreach ($available_at_own as $a_sticker_available) {
             $count_sticker_available = count(\explode(',', $a_sticker_available['stickers']));
             $an_attachment = [
-              'title' => 'You to ' . $a_sticker_available['nick'] . ': '. $count_sticker_available,
+              'title' => 'You to ' . $a_sticker_available['nick'] . ': ' . $count_sticker_available,
               'value' => 'You can give him ' . $a_sticker_available['stickers'],
               'short' => FALSE,
             ];
@@ -1091,7 +1092,7 @@ class PniHelper {
         }
         else {
           $an_attachment = [
-            'title' => 'Trading opportunity with ' . $other_player_info['payload']['nick']. ':',
+            'title' => 'You to ' . $other_player_info['payload']['nick'] . ': 0',
             'value' => 'Unfortunately, you do not have any stickers for trade that ' . $other_player_info['payload']['nick'] . ' is missing',
             'short' => FALSE,
           ];
