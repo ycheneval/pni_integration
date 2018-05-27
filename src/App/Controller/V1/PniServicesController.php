@@ -277,5 +277,22 @@ class PniServicesController {
     return $app->json($message);
   }
 
+  public function sticker(Request $request, Application $app) {
+    $wd = new Watchdog($app);
+    $ph = new PniHelper($request, $app);
+    $wd->watchdog('notice', 'Here is our request object @r', ['@r' => print_r($_POST, TRUE)]);
+    if (!$ph->checkAuth()) {
+      $this->error_msg['text'] .= ': Request not coming from slack';
+      return $app->json($this->error_msg);
+    }
+    $wd->watchdog('notice', 'Origin checked');
+
+    $message = [
+      'response_type' => 'ephemeral',
+      'text' => "Sorry, the sticker feature is not implemented yet",
+    ];
+    return $app->json($message);
+  }
+
 
 }
