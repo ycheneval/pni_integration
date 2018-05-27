@@ -937,11 +937,9 @@ class PniHelper {
       case '-missing':
         // In this case, we need to use missing stickers as input
         $collection_data = $this->getPlayerStickers($player_id, $album_id);
-        if ($collection_data['success']) {
-          // Find the missing stickers of owned stickers
-          $missing_stickers = array_filter($collection_data['payload'], function($an_object) { return !$an_object['owned'];});
-          $missing_stickers_ident = array_map(function($a_value) { return $a_value['ident']; }, $missing_stickers);
-          $stickers_operations[] = ['find' => $missing_stickers_ident];
+        $missing_stickers_id = $this->findMissingInCollection($collection_data);
+        if ($missing_stickers_id) {
+          $stickers_operations[] = ['find' => $missing_stickers_id];
         }
         break;
 
@@ -1008,13 +1006,13 @@ class PniHelper {
    * @return type
    */
   public function findMissingInCollection($collection_data) {
-    $missing_stickers_ident = NULL;
+    $missing_stickers_id = NULL;
     if ($collection_data['success']) {
       // Find the missing stickers of owned stickers
       $missing_stickers = array_filter($collection_data['payload'], function($an_object) { return !$an_object['owned']; });
-      $missing_stickers_ident = array_map(function($a_value) { return $a_value['ident'];}, $missing_stickers);
+      $missing_stickers_id = array_map(function($a_value) { return $a_value['id'];}, $missing_stickers);
     }
-    return $missing_stickers_ident;
+    return $missing_stickers_id;
   }
 
   /**
