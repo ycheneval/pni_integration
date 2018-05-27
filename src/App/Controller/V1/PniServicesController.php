@@ -191,11 +191,23 @@ class PniServicesController {
     }
     $wd->watchdog('notice', 'Origin checked');
 
-    $message = [
-      'response_type' => 'ephemeral',
-      'text' => "Sorry, the exchange feature is not implemented yet",
-    ];
-    return $app->json($message);
+    $player_data = $ph->getPlayerByExternalId($ph->input->user_id);
+    if ($player_data['success']) {
+      $result = $ph->exchange($player_data['payload']['id'], $player_data['payload']['current_album_id'], $ph->input->text);
+      if ($result['success']) {
+        $message = [
+          'response_type' => 'ephemeral',
+          'text' => "Exchange results",
+          'attachments' => $result['slack_attachments']
+        ];
+        $json = $app->json($message);
+        $wd->watchdog('notice', 'Find results json @j', ['@j' => $json]);
+        $app['monolog']->addWarning("This is a test!", (array)$json);
+        return $json;
+      }
+    }
+
+    return $app->json($this->error_msg);
   }
 
   public function totrade(Request $request, Application $app) {

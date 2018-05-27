@@ -437,8 +437,11 @@ class PniHelper {
   }
 
   /**
-   * Return player data
+   * Return player stickers data for $album_id
    *
+   * @param type $player_id
+   * @param type $album_id
+   * @return type
    */
   public function getPlayerStickers($player_id, $album_id) {
     $query = "SELECT
@@ -447,7 +450,7 @@ class PniHelper {
                 ps.owned,
                 ps.trading_capacity
             FROM " . $this->__schema . ".player_sticker ps
-            INNER JOIN sticker st ON ps.sticker_id = st.id
+            INNER JOIN " . $this->__schema . ".sticker st ON ps.sticker_id = st.id
             WHERE ps.player_id = " . $this->db()->quote($player_id)
             . " AND st.album_id = " . $this->db()->quote($album_id);
     $data = $this->db()->getCollection($query);
@@ -876,8 +879,43 @@ class PniHelper {
   }
 
   /**
-   * Find a sticker available to trade
+   * Returns a collection of the stickers available for trade in the list of $wanted_stickers
+   * for $album_id. If you specify $excluded_player_id, will remove result for this player
+   * If you specify $only_player_id, will return data only for this player
+   * Those 2 options are generally exclusive but can be combined
    *
+   * @param type $wanted_stickers
+   * @param type $album_id
+   * @param type $exluded_player_id
+   * @param type $only_player_id
+   * @return type
+   */
+  public function getStickersAvailableForPlayerMatching($wanted_stickers, $album_id, $excluded_player_id = NULL, $only_player_id = NULL) {
+    if (empty($wanted_stickers)) {
+      return NULL;
+    }
+    $query = "SELECT pl.nick, string_agg(st.ident::character varying, ',') as stickers "
+      . " FROM " . $this->__schema . ".player_sticker ps "
+      . " INNER JOIN " . $this->__schema . ".player pl ON ps.player_id = pl.id "
+      . " INNER JOIN " . $this->__schema . ".sticker st ON ps.sticker_id = st.id "
+      . " WHERE ps.sticker_id IN (" . \implode(',', $wanted_stickers) . ") "
+      . " AND st.album_id = " . $album_id
+      . " AND ps.trading_capacity > 0 "
+      . ($excluded_player_id ? " AND ps.player_id != " . $this->db()->quote($excluded_player_id) : "")
+      . ($only_player_id ? " AND ps.player_id = " . $this->db()->quote($only_player_id) : "")
+      . " GROUP BY pl.nick ";
+    $this->wd->watchdog('getStickersAvailableForPlayerMatching', 'Query to execute: @q', ['@q' => $query]);
+    $stickers_available = $this->db()->getCollection($query);
+    return $stickers_available;
+  }
+
+  /**
+   * Find sticker(s) available to trade
+   *
+   * @param type $player_id
+   * @param type $album_id
+   * @param type $stickers
+   * @return type
    */
   public function find($player_id, $album_id, $stickers) {
     $this->wd->watchdog('find', 'Trying to process @t for album @a and player @p', ['@t' => $stickers, '@a' => $album_id, '@p' => $player_id]);
@@ -930,17 +968,7 @@ class PniHelper {
     $attachments = [];
     if (!empty($stickers_operations)) {
       foreach ($stickers_operations as $a_sticker_operation) {
-        $query = "SELECT pl.nick, string_agg(st.ident::character varying, ',') as stickers
-          FROM " . $this->__schema . ".player_sticker ps "
-          . " INNER JOIN player pl ON ps.player_id = pl.id "
-        . " INNER JOIN sticker st ON ps.sticker_id = st.id "
-        . " WHERE ps.sticker_id IN (" . \implode(',', current($a_sticker_operation)) . ") "
-          . " AND st.album_id = " . $album_id
-          . " AND ps.trading_capacity > 0 "
-          . " AND ps.player_id != " . $this->db()->quote($player_id)
-          . " GROUP BY pl.nick ";
-        $this->wd->watchdog('traded', 'Query to execute: @q', ['@q' => $query]);
-        $stickers_available = $this->db()->getCollection($query);
+        $stickers_available = $this->getStickersAvailableForPlayerMatching(current($a_sticker_operation), $album_id, $player_id);
         // Now get attachments to display the data
         foreach ($stickers_available as $a_sticker_available) {
 //          $an_attachment = new \stdClass;
@@ -966,6 +994,95 @@ class PniHelper {
         'slack_attachments' => $attachments,
       ];
     }
+    return [
+      'success' => FALSE,
+      'msg' => 'There was an error processing your command, please review the syntax',
+      'slack_attachments' => NULL,
+    ];
+  }
+
+  /**
+   * Return the list of missing stickers for player in $collection_data
+   *
+   * @param type $collection_data
+   * @return type
+   */
+  public function findMissingInCollection($collection_data) {
+    $missing_stickers_ident = NULL;
+    if ($collection_data['success']) {
+      // Find the missing stickers of owned stickers
+      $missing_stickers = array_filter($collection_data['payload'], function($an_object) { return !$an_object['owned']; });
+      $missing_stickers_ident = array_map(function($a_value) { return $a_value['ident'];}, $missing_stickers);
+    }
+    return $missing_stickers_ident;
+  }
+
+  /**
+   * Find exchange with a given player
+   *
+   */
+  public function exchange($player_id, $album_id, $player_nick) {
+    $this->wd->watchdog('exchange', 'Trying to process with player @pn for album @a and player @p', ['@pn' => $player_nick, '@a' => $album_id, '@p' => $player_id]);
+    $all_stickers = $this->getStickersByAlbum($album_id);
+    if (!$all_stickers['success']) {
+      // There are no stickers, return an error
+      return [
+        'success' => FALSE,
+        'error_message' => 'We cannot find stickers for this album!',
+      ];
+    }
+    $this->wd->watchdog('find', 'All Stickers found: @c', ['@c' => count($all_stickers['payload'])]);
+
+    // Setup some variables
+    $stickers_operations = [];
+
+    $collection_data_own = $this->getPlayerStickers($player_id, $album_id);
+    if ($collection_data_own['success']) {
+      $missing_own = $this->findMissingInCollection($collection_data_own);
+      $other_player_info = $this->getPlayerByNick(trim($player_nick));
+      if ($other_player_info['success']) {
+        $other_player_id = $other_player_info['payload']['id'];
+        $collection_data_other = $this->getPlayerStickers($other_player_info['payload']['id'], $album_id);
+        $missing_other = $this->findMissingInCollection($collection_data_other);
+
+        // Now check what we can do to trade.
+        // To do this, we need to find for each player which one is missing and
+        // available to trade by the other
+        // Start with the stickers the other player has that we need
+        $available_at_other = $this->getStickersAvailableForPlayerMatching($missing_own, $album_id, NULL, $other_player_id);
+        foreach ($available_at_other as $a_sticker_available) {
+          $an_attachment = [
+            'title' => 'Trading opportunity:',
+            'value' => 'You can get ' . $a_sticker_available['stickers'] . ' from ' . $a_sticker_available['nick'],
+            'short' => FALSE
+          ];
+          $attachments[] = [
+            'color' => "#7F8DE1",
+            'fields' => [$an_attachment],
+          ];
+        }
+        $available_at_own = $this->getStickersAvailableForPlayerMatching($missing_other, $album_id, NULL, $player_id);
+        foreach ($available_at_other as $a_sticker_available) {
+          $an_attachment = [
+            'title' => 'Trading opportunity:',
+            'value' => 'You can give ' . $a_sticker_available['stickers'] . ' to ' . $a_sticker_available['nick'],
+            'short' => FALSE
+          ];
+          $attachments[] = [
+            'color' => "#7F8DE1",
+            'fields' => [$an_attachment],
+          ];
+        }
+        $this->wd->watchdog('find', 'Found attachments: @a', ['@a' => print_r($attachments, TRUE)]);
+
+        return [
+          'success' => TRUE,
+          'msg' => 'Exchange result',
+          'slack_attachments' => $attachments,
+        ];
+      }
+    }
+
     return [
       'success' => FALSE,
       'msg' => 'There was an error processing your command, please review the syntax',
