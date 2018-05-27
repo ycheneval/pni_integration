@@ -32,6 +32,13 @@ class PniServicesController {
      'text' => "There was an error processing your command",
   ];
 
+  /**
+   * Setup a new album or list existing albums
+   *
+   * @param Request $request
+   * @param Application $app
+   * @return type
+   */
   public function album(Request $request, Application $app) {
     $wd = new Watchdog($app);
     $ph = new PniHelper($request, $app);
@@ -70,6 +77,13 @@ class PniServicesController {
 
   }
 
+  /**
+   * Set or get the stickers you have
+   *
+   * @param Request $request
+   * @param Application $app
+   * @return type
+   */
   public function got(Request $request, Application $app) {
     $wd = new Watchdog($app);
     $ph = new PniHelper($request, $app);
@@ -95,6 +109,13 @@ class PniServicesController {
     return $app->json($this->error_msg);
   }
 
+  /**
+   * Set of get the missing stickers
+   *
+   * @param Request $request
+   * @param Application $app
+   * @return type
+   */
   public function missing(Request $request, Application $app) {
     $wd = new Watchdog($app);
     $ph = new PniHelper($request, $app);
@@ -120,6 +141,13 @@ class PniServicesController {
     return $app->json($this->error_msg);
   }
 
+  /**
+   * Statistics for a player
+   *
+   * @param Request $request
+   * @param Application $app
+   * @return type
+   */
   public function stats(Request $request, Application $app) {
     $wd = new Watchdog($app);
     $ph = new PniHelper($request, $app);
@@ -153,6 +181,14 @@ class PniServicesController {
 
   }
 
+
+  /**
+   * Find stickers to trade
+   *
+   * @param Request $request
+   * @param Application $app
+   * @return type
+   */
   public function find(Request $request, Application $app) {
     $wd = new Watchdog($app);
     $ph = new PniHelper($request, $app);
@@ -169,7 +205,7 @@ class PniServicesController {
       if ($result['success']) {
         $message = [
           'response_type' => 'ephemeral',
-          'text' => "Find results",
+          'text' => $result['main_title'],
           'attachments' => $result['slack_attachments']
         ];
         $json = $app->json($message);
@@ -181,6 +217,13 @@ class PniServicesController {
     return $app->json($this->error_msg);
   }
 
+  /**
+   * Ask to match player cards with another player
+   *
+   * @param Request $request
+   * @param Application $app
+   * @return type
+   */
   public function exchange(Request $request, Application $app) {
     $wd = new Watchdog($app);
     $ph = new PniHelper($request, $app);
@@ -210,6 +253,15 @@ class PniServicesController {
     return $app->json($this->error_msg);
   }
 
+  /**
+   * Set the cards available to trade with other players.
+   * You can *remove* a card (without trading it) by putting the "remove"
+   * keyword just after the slash command: /totrade remove 25,23 (TBD)
+   *
+   * @param Request $request
+   * @param Application $app
+   * @return type
+   */
   public function totrade(Request $request, Application $app) {
     $wd = new Watchdog($app);
     $ph = new PniHelper($request, $app);
@@ -226,7 +278,7 @@ class PniServicesController {
       if ($result['success']) {
         $message = [
           'response_type' => 'ephemeral',
-          'text' => "A new totrade has been setup",
+          'text' => "You have added new stickers on your to trade list",
           'attachments' => $result['slack_attachments']
         ];
         return $app->json($message);
@@ -235,6 +287,14 @@ class PniServicesController {
     return $app->json($this->error_msg);
   }
 
+  /**
+   * Announce which cards have been traded and therefore are not available to
+   * trade anymore (unless multiple doubles)
+   *
+   * @param Request $request
+   * @param Application $app
+   * @return type
+   */
   public function traded(Request $request, Application $app) {
     $wd = new Watchdog($app);
     $ph = new PniHelper($request, $app);
@@ -251,7 +311,7 @@ class PniServicesController {
       if ($result['success']) {
         $message = [
           'response_type' => 'ephemeral',
-          'text' => "A new traded has been setup",
+          'text' => 'The traded stickers have been removed from your to trade list',
           'attachments' => $result['slack_attachments']
         ];
         return $app->json($message);
@@ -260,6 +320,14 @@ class PniServicesController {
     return $app->json($this->error_msg);
   }
 
+  /**
+   * Add a watch for a given card. When this card is available to trade,
+   * the player will receive a notification
+   *
+   * @param Request $request
+   * @param Application $app
+   * @return type
+   */
   public function watch(Request $request, Application $app) {
     $wd = new Watchdog($app);
     $ph = new PniHelper($request, $app);
@@ -277,6 +345,13 @@ class PniServicesController {
     return $app->json($message);
   }
 
+  /**
+   * Find sticker info
+   *
+   * @param Request $request
+   * @param Application $app
+   * @return type
+   */
   public function sticker(Request $request, Application $app) {
     $wd = new Watchdog($app);
     $ph = new PniHelper($request, $app);

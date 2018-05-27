@@ -973,6 +973,8 @@ class PniHelper {
     // Now we should have in $result_stickers the list of things to do
     // in to_add or to_remove
     $attachments = [];
+    $nb_opportunities = 0;
+    $ma = $this->max_attachments;
     if (!empty($stickers_operations)) {
       foreach ($stickers_operations as $a_sticker_operation) {
         $stickers_available = $this->getStickersAvailableForPlayerMatching(current($a_sticker_operation), $album_id, $player_id);
@@ -982,6 +984,10 @@ class PniHelper {
 //          $an_attachment->title = 'Player';
 //          $an_attachment->value = 'You can trade ' . $a_sticker_available['stickers'] . ' with ' . $a_sticker_available['nick'];
 //          $an_attachment->short = false;
+          $nb_opportunities++;
+          if ($ma < $nb_opportunities) {
+            continue;
+          }
           $an_attachment = [
             'title' => 'Trading opportunity:',
             'value' => 'You can trade ' . $a_sticker_available['stickers'] . ' with ' . $a_sticker_available['nick'],
@@ -993,11 +999,13 @@ class PniHelper {
           ];
         }
       }
-    $this->wd->watchdog('find', 'Found attachments: @a', ['@a' => print_r($attachments, TRUE)]);
+      $this->wd->watchdog('find', 'Found attachments: @a', ['@a' => print_r($attachments, TRUE)]);
+
+      $nb_attachments = count($attachments);
 
       return [
         'success' => TRUE,
-        'msg' => 'Stickers traded have been updated for your album',
+        'main_title' => $nb_opportunities . ' trading ' . ($nb_attachments > 1 ? 'opportunities' : 'opportunity') . ' found' . ($ma < $nb_opportunities ? ', we are displaying the first ' . $max_attach_reached . ' only' : ''),
         'slack_attachments' => $attachments,
       ];
     }
@@ -1273,7 +1281,7 @@ class PniHelper {
           $ownedormissing_stickers_ident = array_map(function($a_value) { return $a_value['ident']; }, $owned_stickers);
         }
         else {
-          $title = 'Missing stickers list';
+          $title = 'Missing stickers';
           $missing_stickers = array_filter($collection_data['payload'], function($an_object) { return !$an_object['owned'];});
           $ownedormissing_stickers_ident = array_map(function($a_value) { return $a_value['ident']; }, $missing_stickers);
         }
