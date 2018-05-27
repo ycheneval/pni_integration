@@ -1347,7 +1347,7 @@ class PniHelper {
         if (empty($a_sticker)) {
           continue;
         }
-        $this->wd->watchdog('sticker', 'For sticker @s, found info @i', ['@s' => $a_sticker, '@i' => print_r($all_stickers['payload'][$a_sticker], TRUE)]);
+//        $this->wd->watchdog('sticker', 'For sticker @s, found info @i', ['@s' => $a_sticker, '@i' => print_r($all_stickers['payload'][$a_sticker], TRUE)]);
         $fields[] = [
           'title' => 'Name',
           'value' => $all_stickers['payload'][$a_sticker]['name'],
@@ -1358,7 +1358,7 @@ class PniHelper {
           'value' => $all_stickers['payload'][$a_sticker]['ident'],
           'short' => TRUE,
         ];
-        $this->wd->watchdog('sticker', 'For sticker @s, current fields @f', ['@s' => $a_sticker, '@f' => print_r($fields, TRUE)]);
+//        $this->wd->watchdog('sticker', 'For sticker @s, current fields @f', ['@s' => $a_sticker, '@f' => print_r($fields, TRUE)]);
         if (!empty($all_stickers['payload'][$a_sticker]['team_name'])) {
           $fields[] = [
             'title' => 'Team',
@@ -1366,23 +1366,22 @@ class PniHelper {
             'short' => TRUE,
           ];
         }
-        $this->wd->watchdog('sticker', 'For sticker @s, current fields @f', ['@s' => $a_sticker, '@f' => print_r($fields, TRUE)]);
         if ($display_owned_information) {
-          $this->wd->watchdog('sticker', 'For sticker @s, collection data @cd', ['@s' => $a_sticker, '@cd' => print_r($collection_data['payload'][$a_sticker], TRUE)]);
           $fields[] = [
             'title' => 'Owned',
             'value' => ($collection_data['payload'][$a_sticker]['owned'] ? 'Yes' : 'No'),
             'short' => TRUE,
           ];
         }
+//        $this->wd->watchdog('sticker', 'For sticker @s, current fields @f', ['@s' => $a_sticker, '@f' => print_r($fields, TRUE)]);
         $attachments[] = [
           'color' => "#7F8DE1",
           'image_url' => $all_stickers['payload'][$a_sticker]['url'],
           'fields' => $fields,
         ];
-
       }
       $msg['slack_attachments'] = $attachments;
+      $msg['success'] = TRUE;
     }
 
     return $msg;
