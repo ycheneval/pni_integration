@@ -933,8 +933,9 @@ class PniHelper {
     $stickers_operations = [];
 
     // Check if $stickers is not a special command
-    switch ($stickers) {
+    switch (trim($stickers)) {
       case '-missing':
+      case '':
         // In this case, we need to use missing stickers as input
         $collection_data = $this->getPlayerStickers($player_id, $album_id);
         $missing_stickers_id = $this->findMissingInCollection($collection_data);
@@ -1049,23 +1050,41 @@ class PniHelper {
         // Start with the stickers the other player has that we need
         $available_at_other = $this->getStickersAvailableForPlayerMatching($missing_own, $album_id, NULL, $other_player_id);
         foreach ($available_at_other as $a_sticker_available) {
-          $an_attachment = [
-            'title' => 'Trading opportunity:',
-            'value' => 'You can get ' . $a_sticker_available['stickers'] . ' from ' . $a_sticker_available['nick'],
-            'short' => FALSE
-          ];
+          if (empty($a_sticker_available['stickers'])) {
+            $an_attachment = [
+              'title' => 'Trading opportunity:',
+              'value' => 'Unfortunately, ' . $a_sticker_available['nick'] . ' does not own any of your missing stickers',
+              'short' => FALSE,
+            ];
+          }
+          else {
+            $an_attachment = [
+              'title' => 'Trading opportunity:',
+              'value' => 'You can get ' . $a_sticker_available['stickers'] . ' from ' . $a_sticker_available['nick'],
+              'short' => FALSE,
+            ];
+          }
           $attachments[] = [
             'color' => "#7F8DE1",
             'fields' => [$an_attachment],
           ];
         }
         $available_at_own = $this->getStickersAvailableForPlayerMatching($missing_other, $album_id, NULL, $player_id);
-        foreach ($available_at_other as $a_sticker_available) {
-          $an_attachment = [
-            'title' => 'Trading opportunity:',
-            'value' => 'You can give ' . $a_sticker_available['stickers'] . ' to ' . $a_sticker_available['nick'],
-            'short' => FALSE
-          ];
+        foreach ($available_at_own as $a_sticker_available) {
+          if (empty($a_sticker_available['stickers'])) {
+            $an_attachment = [
+              'title' => 'Trading opportunity:',
+              'value' => 'Unfortunately, you do not own any stickers that ' . $a_sticker_available['nick'] . ' is missing',
+              'short' => FALSE,
+            ];
+          }
+          else {
+            $an_attachment = [
+              'title' => 'Trading opportunity:',
+              'value' => 'You can give ' . $a_sticker_available['stickers'] . ' to ' . $a_sticker_available['nick'],
+              'short' => FALSE,
+            ];
+          }
           $attachments[] = [
             'color' => "#7F8DE1",
             'fields' => [$an_attachment],
