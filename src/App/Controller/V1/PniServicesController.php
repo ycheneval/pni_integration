@@ -293,8 +293,8 @@ class PniServicesController {
       if ($result['success']) {
         $message = [
           'response_type' => 'ephemeral',
-          'text' => "A new traded has been setup",
-          'attachments' => $result['slack_attachments']
+          'text' => $result['main_title'],
+          'attachments' => $result['slack_attachments'],
         ];
         return $app->json($message);
       }

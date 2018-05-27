@@ -31,6 +31,7 @@ class PniHelper {
   protected $_logged_sfid = NULL;
   protected $_oc_info = NULL;
   public $input = NULL;
+  public $max_attachments = 25;
 
   public function __construct($request, $app, $jWT = NULL) {
     $this->app = $app;
@@ -1341,10 +1342,11 @@ class PniHelper {
     // Now we should have in $result_stickers the list of things to do
     // in to_add or to_remove
     if (!empty($stickers_list)) {
+      $ma = $this->max_attachments;
       $attachments = [];
       foreach ($stickers_list as $a_sticker) {
         $fields = [];
-        if (empty($a_sticker)) {
+        if (empty($a_sticker) || ($ma < count($attachments))) {
           continue;
         }
 //        $this->wd->watchdog('sticker', 'For sticker @s, found info @i', ['@s' => $a_sticker, '@i' => print_r($all_stickers['payload'][$a_sticker], TRUE)]);
@@ -1381,6 +1383,7 @@ class PniHelper {
         ];
       }
       $msg['slack_attachments'] = $attachments;
+      $msg['main_title'] = $stickers_list . " sticker" . (count($attachments) > 1 ? 's' : '') . ' found' . ($ma < count($stickers_list) ? ', only the first ' . $ma. ' are displayed' : '');
       $msg['success'] = TRUE;
     }
 
