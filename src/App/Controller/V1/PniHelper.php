@@ -1333,15 +1333,17 @@ class PniHelper {
       $input_stickers = $this->decodeStickers($all_stickers, $s_arr_value);
       $stickers_list += $input_stickers;
     }
-    $this->wd->watchdog('traded', 'Found @c stickers for detailed information', ['@c' => count($stickers_list)]);
+    $this->wd->watchdog('sticker', 'Found @c sticker(s) for detailed information', ['@c' => count($stickers_list)]);
 
     // Now we should have in $result_stickers the list of things to do
     // in to_add or to_remove
     if (!empty($stickers_list)) {
+      $attachments = [];
       foreach ($stickers_list as $a_sticker) {
         if (empty($a_sticker)) {
           continue;
         }
+        $this->wd->watchdog('sticker', 'For sticker @s, found info @i', ['@s' => $a_sticker, '@i' => print_r($all_stickers['payload'][$a_sticker], TRUE)]);
         $fields[] = [
           'title' => 'Name',
           'value' => $all_stickers['payload'][$a_sticker]['name'],
