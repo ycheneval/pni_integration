@@ -161,8 +161,11 @@ class PniHelper {
                 st.ident,
                 st.name,
                 st.team_album_id,
-                st.url
+                st.url,
+                te.name as team_name
             FROM " . $this->__schema . ".sticker st
+            LEFT JOIN " . $this->__schema . ".team_album ta ON st.team_album_id = ta.id
+            LEFT JOIN " . $this->__schema . ".team te ON ta.team_id = te.id
             WHERE st.album_id = " . $this->db()->quote($album_id);
     $stickers = $this->db()->getCollection($query);
     $data = [
@@ -173,12 +176,13 @@ class PniHelper {
     if ($stickers) {
       $data['success'] = TRUE;
       foreach($stickers as $a_sticker) {
-        $data['payload'][] = [
+        $data['payload'][$a_sticker['id']] = [
           'id' => $a_sticker['id'],
           'ident' => $a_sticker['ident'],
           'name' => $a_sticker['name'],
           'team_album_id' => $a_sticker['team_album_id'],
           'url' => $a_sticker['url'],
+          'team_name' => $a_sticker['team_name'],
           ];
       }
     }
@@ -1293,4 +1297,81 @@ class PniHelper {
     }
     return $msg;
   }
+
+
+    /**
+   * Indicate which stickers you have traded
+   *
+   */
+  public function sticker($player_id, $album_id, $stickers) {
+    $this->wd->watchdog('sticker', 'Trying to process @t for album @a and player @p', ['@t' => $stickers, '@a' => $album_id, '@p' => $player_id]);
+    $all_stickers = $this->getStickersByAlbum($album_id);
+    if (!$all_stickers['success']) {
+      // There are no stickers, return an error
+      return [
+        'success' => FALSE,
+        'error_message' => 'We cannot find stickers for this album!',
+      ];
+    }
+    $this->wd->watchdog('sticker', 'All Stickers found: @c', ['@c' => count($all_stickers['payload'])]);
+
+    $collection_data = $this->getPlayerStickers($player_id, $album_id);
+    $display_owned_information = $collection_data['success'];
+
+    // First split the $stickers
+    $s_array = \explode(' ', $stickers);
+
+    // Setup some variables
+    $stickers_list = [];
+
+    $msg = [
+      'success' => FALSE,
+    ];
+    foreach ($s_array as $s_arr_value) {
+      // Ok so this is the list of stickers. Find'em all!
+      $this->wd->watchdog('sticker', 'Default case, trying to find stickers for: @s', ['@s' => $s_arr_value]);
+      $input_stickers = $this->decodeStickers($all_stickers, $s_arr_value);
+      $stickers_list += $input_stickers;
+    }
+    $this->wd->watchdog('traded', 'Found @c stickers for detailed information', ['@c' => count($stickers_list)]);
+
+    // Now we should have in $result_stickers the list of things to do
+    // in to_add or to_remove
+    if (!empty($stickers_list)) {
+      foreach ($stickers_list as $a_sticker) {
+        if (empty($a_sticker)) {
+          continue;
+        }
+        $fields[] = [
+          'title' => 'Name',
+          'value' => $all_stickers['payload'][$a_sticker]['name'],
+          'short' => TRUE,
+        ];
+        if (!empty($all_stickers['payload'][$a_sticker]['team_name'])) {
+          $fields[] = [
+            'title' => 'Team',
+            'value' => $all_stickers['payload'][$a_sticker]['team_name'],
+            'short' => TRUE,
+          ];
+        }
+        if ($display_owned_information) {
+          $fields[] = [
+            'title' => 'Owned',
+            'value' => ($collection_data['payload'][$a_sticker]['owned'] ? 'Yes' : 'No'),
+            'short' => TRUE,
+          ];
+        }
+        $attachments[] = [
+          'color' => "#7F8DE1",
+          'image_url' => $all_stickers['payload'][$a_sticker]['url'],
+          'fields' => $fields,
+        ];
+
+      }
+      $msg['slack_attachments'] = $attachments;
+    }
+
+    return $msg;
+  }
+
 }
