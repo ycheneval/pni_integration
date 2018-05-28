@@ -1587,6 +1587,7 @@ class PniHelper {
     }
     return [
       'success' => TRUE,
+      'main_title' => 'Watches operations',
       'slack_attachments' => $attachments,
       ];
   }
@@ -1663,7 +1664,7 @@ class PniHelper {
           }
           return [
             'success' => TRUE,
-            'msg' => 'Watch list',
+            'main_title' => 'Watch list',
             'slack_attachments' => $attachments,
           ];
           break;
