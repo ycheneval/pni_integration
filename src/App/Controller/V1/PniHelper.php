@@ -641,7 +641,7 @@ class PniHelper {
       return [
         'success' => FALSE,
         'player_id' => NULL,
-        'payload' => NULL,
+        'payload' => [],
       ];
     }
   }
@@ -1639,7 +1639,7 @@ class PniHelper {
 
     $feature_enabled =  $_ENV['SLACK_BOT_ENABLED'];
     $watches = $this->getWatchByPlayer($player_id);
-    $this->wd->watchog('watch', 'For player @p, got watches @w', ['@p' => $player_id, '@w' => print_r($watches, TRUE)]);
+//    $this->wd->watchdog('watch', 'For player @p, got watches @w', ['@p' => $player_id, '@w' => print_r($watches, TRUE)]);
 
     $actions = \explode(' ', $params);
     $cur_action = 'add';
