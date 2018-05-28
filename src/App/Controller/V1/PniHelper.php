@@ -626,7 +626,7 @@ class PniHelper {
             INNER JOIN " . $this->__schema . ".sticker st ON wa.sticker_id = st.id
             WHERE wa.player_id = " . $this->db()->quote($player_id)
             . " AND wa.date_expiring > now()"
-            . " ORDER BY wa.date_expiring desc";
+            . " ORDER BY wa.date_expiring";
     $data = $this->db()->getCollection($query);
     if ($data) {
       $sticker_keys = array_map(function($an_object) { return $an_object['sticker_id']; }, $data);
@@ -1680,7 +1680,7 @@ class PniHelper {
         default:
           // This is the list of stickers to process
           $stickers = $this->decodeStickers($all_stickers, $stickers_input);
-          return $this->processWatchAction($watches, $player_id, $cur_action, $stickers);
+          return $this->processWatchAction($watches['payload'], $player_id, $cur_action, $stickers);
           break;
       }
     }
