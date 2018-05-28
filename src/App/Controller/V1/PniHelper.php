@@ -1639,6 +1639,7 @@ class PniHelper {
 
     $feature_enabled =  $_ENV['SLACK_BOT_ENABLED'];
     $watches = $this->getWatchByPlayer($player_id);
+    $this->wd->watchog('watch', 'For player @p, got watches @w', ['@p' => $player_id, '@w' => print_r($watches, TRUE)]);
 
     $actions = \explode(' ', $params);
     $cur_action = 'add';
@@ -1646,6 +1647,7 @@ class PniHelper {
       switch ($an_action) {
         case 'list':
           // Return the list of watches
+          $attachments = [];
           foreach ($watches as $a_watch) {
             $fields[] = [
               'title' => 'Sticker',
