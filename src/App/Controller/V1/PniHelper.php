@@ -1652,9 +1652,10 @@ class PniHelper {
               'value' => $a_watch['sticker_number'] . ' (' . $a_watch['sticker_name'] . ')',
               'short' => TRUE,
             ];
+            $date_expiring = \DateTime::createFromFormat('Y-M-d H:i:s.u', $a_watch['date_expiring']);
             $fields[] = [
               'title' => 'Expiring',
-              'value' =>  DateTime::createFromFormat('Y-M-d HH:mm:ss.u', $a_watch['date_expiring']).format('Y-M-d HH:mm'),
+              'value' => $date_expiring.format('Y-M-d H:i'),
               'short' => TRUE,
             ];
             $attachments[] = [
