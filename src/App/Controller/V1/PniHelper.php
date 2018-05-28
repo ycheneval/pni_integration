@@ -1654,7 +1654,7 @@ class PniHelper {
             ];
             $fields[] = [
               'title' => 'Expiring',
-              'value' =>  new Date($a_watch['date_expiring']).format('Y-M-d HH:mm'),
+              'value' =>  DateTime::createFromFormat('Y-M-d HH:mm:ss.u', $a_watch['date_expiring']).format('Y-M-d HH:mm'),
               'short' => TRUE,
             ];
             $attachments[] = [
