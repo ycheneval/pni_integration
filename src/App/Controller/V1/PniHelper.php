@@ -1648,7 +1648,7 @@ class PniHelper {
         case 'list':
           // Return the list of watches
           $attachments = [];
-          foreach ($watches as $a_watch) {
+          foreach ($watches['payload'] as $a_watch) {
             $fields[] = [
               'title' => 'Sticker',
               'value' => $a_watch['sticker_number'] . ' (' . $a_watch['sticker_name'] . ')',
