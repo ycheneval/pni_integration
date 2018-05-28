@@ -608,6 +608,81 @@ class PniHelper {
   }
 
   /**
+   * Returns the active watches for this player
+   *
+   * @param type $player_id
+   * @return type
+   */
+  public function getWatchByPlayer($player_id) {
+    $query = "SELECT
+                wa.id,
+                wa.player_id,
+                wa.sticker_id,
+                wa.date_started,
+                wa.date_expiring,
+                st.name as sticker_name,
+                st.ident as sticker_number
+            FROM " . $this->__schema . ".watch wa
+            INNER JOIN " . $this->__schema . ".sticker st ON wa.sticker_id = st.id
+            WHERE wa.player_id = " . $this->db()->quote($player_id)
+            . " AND wa.date_expiring > now()"
+            . " ORDER BY wa.date_expiring desc";
+    $data = $this->db()->getCollection($query);
+    if ($data) {
+      $sticker_keys = array_map(function($an_object) { return $an_object['sticker_id']; }, $data);
+      $payload = array_combine($sticker_keys, $data);
+      return [
+        'success' => TRUE,
+        'player_id' => $player_id,
+        'payload' => $payload,
+      ];
+    }
+    else {
+      return [
+        'success' => FALSE,
+        'player_id' => NULL,
+        'payload' => NULL,
+      ];
+    }
+  }
+
+  /**
+   * Returns the active watches for this player
+   *
+   * @param type $player_id
+   * @return type
+   */
+  public function getWatchBySticker($sticker_id) {
+    $query = "SELECT
+                wa.id,
+                wa.player_id,
+                wa.sticker_id,
+                wa.date_started,
+                wa.date_expiring,
+                st.name as sticker_name,
+                st.ident as sticker_number
+            FROM " . $this->__schema . ".watch wa
+            INNER JOIN " . $this->__schema . ".sticker st ON wa.sticker_id = st.id
+            WHERE wa.sticker_id = " . $this->db()->quote($sticker_id)
+            . " AND wa.date_expiring > now()";
+    $data = $this->db()->getCollection($query);
+    if ($data) {
+      $sticker_keys = array_map(function($an_object) { return $an_object['sticker_id']; }, $data);
+      $payload = array_combine($sticker_keys, $data);
+      return [
+        'success' => TRUE,
+        'payload' => $payload,
+      ];
+    }
+    else {
+      return [
+        'success' => FALSE,
+        'payload' => NULL,
+      ];
+    }
+  }
+
+  /**
    * Indicate which stickers you already got
    *
    */
@@ -1398,4 +1473,212 @@ class PniHelper {
     return $msg;
   }
 
+  /**
+   * Send a ephemeral message to user $player_externalid
+   *
+   * @param type $text
+   * @param type $player_externalid
+   * @return boolean
+   */
+  protected function sendEphemeralMsgToPlayer($text, $player_externalid) {
+    $feature_enabled =  $_ENV['SLACK_BOT_ENABLED'];
+
+    // Check that bot is enabled
+    if (!$feature_enabled) {
+      return FALSE;
+    }
+
+    $slack_channel = $_ENV['SLACK_CHANNEL'];
+    $slack_bot_token = $_ENV['SLACK_BOT_TOKEN'];
+    $slackapi_chat_ephemeral =  $_ENV['SLACKAPI_CHATEPHEMERAL_URL'];
+    if (!empty($slack_channel) && !empty($slack_bot_token) && !empty($slackapi_chat_ephemeral))
+    $msg = [
+      'channel' => $slack_channel,
+      'text' => $text,
+      'as_user' => TRUE,
+      'user' => $player_externalid,
+    ];
+    $ch = new CurlHelper($this->app);
+    $headers = [
+      'Content-Type' => 'application/json; charset=utf-8',
+      'Authorization' => 'Bearer ' . $slack_bot_token
+    ];
+    $response = $ch->httpRequest($slackapi_chat_ephemeral, $this->app->json($msg), $headers, 'POST');
+    if (!in_array($response->code, array(200, 201, 204))) {
+      // We got an error
+      return FALSE;
+    }
+    return TRUE;
+  }
+
+  protected function watch_expire($watch_id) {
+    $query = "UPDATE " . $this->__schema . ".watch SET date_expiring = NOW() WHERE id = " . $this->db()->quote($watch_id);
+    return $this->db()->exec($query);
+  }
+
+  protected function processWatchAction($watches, $player_id, $cur_action, $stickers) {
+    $max_watches =  $_ENV['MAX_WATCHES'];
+    $cur_watch_nb = count($watches);
+
+    $attachments = [];
+    switch ($cur_action) {
+      case 'add':
+        if ($cur_watch_nb >= $max_watches) {
+          break;
+        }
+        // We have room for a new watch (at least)
+        foreach ($stickers as $a_sticker) {
+          if ($cur_watch_nb >= $max_watches) {
+            break;
+          }
+          // First check if we have the watch already
+          if (array_key_exists($a_sticker, $watches)) {
+            // Nothing to do
+            continue;
+          }
+          // Insert the new watch in the list
+          $query = "INSERT INTO " . $this->__schema . ".watch (player_id, sticker_id, date_expiring)"
+            . " VALUES "
+            . " (" . $this->db()->quote($player_id) . ", " . $a_sticker . ", NOW() + interval '1 day'" . ")"
+            . " RETURNING date_expiring";
+
+          $result = $this->db()->exec($query);
+          // Insert the result in the return data
+          $fields = [];
+          $fields[] = [
+            'title' => 'Add',
+            'value' => 'A new watch for sticker ' . $a_sticker . ' has been added',
+            'short' => TRUE,
+          ];
+          $fields[] = [
+            'title' => 'Expiring',
+            'value' => 'Watch expiring on ' . print_r($result, TRUE),
+            'short' => TRUE,
+          ];
+          $attachments[] = [
+            'color' => "#7F8DE1",
+            'fields' => $fields,
+          ];
+          $cur_watch_nb++;
+        }
+        break;
+
+      case 'remove':
+        foreach ($stickers as $a_sticker) {
+          // First check if we have the watch already
+          if (!array_key_exists($a_sticker, $watches)) {
+            // Nothing to do
+            continue;
+          }
+          $this->watch_expire($watches[$a_sticker]['id']);
+          $cur_watch_nb--;
+          $fields = [];
+          $fields[] = [
+            'title' => 'Remove',
+            'value' => 'The existing watch for sticker ' . $a_sticker . ' has been removed',
+            'short' => FALSE,
+          ];
+          $attachments[] = [
+            'color' => "#7F8DE1",
+            'fields' => $fields,
+          ];
+        }
+        break;
+    }
+    return [
+      'success' => TRUE,
+      'slack_attachments' => $attachments,
+      ];
+  }
+
+  /**
+   * Check if there is a watch for $sticker_id and send notification if necessary
+   *
+   * @param type $player_id
+   * @param type $sticker_id
+   */
+  protected function checkWatch($player_id, $sticker_id) {
+    $sticker_info = $this->getStickerById($sticker_id);
+    if ($sticker_info['success']) {
+      $watches = $this->getWatchBySticker($sticker_id);
+      foreach ($watches as $a_watch) {
+        $player_info = $this->getPlayer($a_wathc['player_id']);
+        if ($player_info['success']) {
+          $dest_player_id = $player_info['payload']['id'];
+          $dest_player_nick = $player_info['payload']['nick'];
+          $dest_player_external_id = $player_info['payload']['external_id'];
+          $dest_player_name =
+          $msg = strtr('The sticker @sident (@sn) is now for trade by player @pn', [
+            '@sident' => $sticker_info['payload']['ident'],
+            '@sn' => $sticker_info['payload']['name'],
+            '@pn' => $dest_player_nick]);
+          if ($this->sendEphemeralMsgToPlayer($msg, $dest_player_external_id)) {
+            $query = "INSERT INTO " . $this->__schema . ".watch_notification (watch_id, msg, vector)"
+              . " VALUES "
+              . "(" . $a_watch['id'] . ", " . $this->db()->quote($msg) . ", " . "'slack_bot'" . ")";
+            $this->db()->exec($query);
+            $this->watch_expire($a_watch['id']);
+          }
+        }
+      }
+    }
+
+  }
+
+  /**
+   * Manage watches
+   *
+   * @param type $player_id
+   * @param type $album_id
+   * @param type $params
+   * @return type
+   */
+  public function watch($player_id, $album_id, $params) {
+    $this->wd->watchdog('watch', 'Trying to process @p for album @a and player @p', ['@p' => $params, '@a' => $album_id, '@p' => $player_id]);
+
+    $feature_enabled =  $_ENV['SLACK_BOT_ENABLED'];
+    $watches = $this->getWatchByPlayer($player_id);
+
+    $actions = \explode(' ', $params);
+    $cur_action = 'add';
+    foreach ($actions as $an_action) {
+      switch ($an_action) {
+        case 'list':
+          // Return the list of watches
+          foreach ($watches as $a_watch) {
+            $fields[] = [
+              'title' => 'Sticker',
+              'value' => $a_watch['sticker_number'] . ' (' . $a_watch['sticker_name'] . ')',
+              'short' => TRUE,
+            ];
+            $fields[] = [
+              'title' => 'Expiring',
+              'value' =>  new Date($a_watch['date_expiring']).format('Y-M-d HH:mm'),
+              'short' => TRUE,
+            ];
+            $attachments[] = [
+              'color' => "#7F8DE1",
+              'fields' => $fields,
+            ];
+          }
+          return [
+            'success' => TRUE,
+            'msg' => 'Watch list',
+            'slack_attachments' => $attachments,
+          ];
+          break;
+
+        case 'remove':
+        case 'add':
+          $cur_action = $an_action;
+          break;
+
+        default:
+          // This is the list of stickers to process
+          $stickers = $this->decodeStickers($all_stickers, $stickers_input);
+          return $this->processWatchAction($watches, $player_id, $cur_action, $stickers);
+          break;
+      }
+    }
+  }
 }
