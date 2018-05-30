@@ -1650,7 +1650,7 @@ class PniHelper {
 
     $feature_enabled =  $_ENV['SLACK_BOT_ENABLED'];
     $watches = $this->getWatchByPlayer($player_id);
-//    $this->wd->watchdog('watch', 'For player @p, got watches @w', ['@p' => $player_id, '@w' => print_r($watches, TRUE)]);
+    $this->wd->watchdog('watch', 'For player @p, got watches @w', ['@p' => $player_id, '@w' => print_r($watches, TRUE)]);
 
     $actions = \explode(' ', $params);
     $cur_action = 'add';
@@ -1659,26 +1659,32 @@ class PniHelper {
         case 'list':
           // Return the list of watches
           $attachments = [];
-          foreach ($watches['payload'] as $a_watch) {
-            $fields[] = [
-              'title' => 'Sticker',
-              'value' => $a_watch['sticker_number'] . ' (' . $a_watch['sticker_name'] . ')',
-              'short' => TRUE,
-            ];
-            $date_expiring = \DateTime::createFromFormat('Y-m-d H:i:s.u', $a_watch['date_expiring']);
-            $fields[] = [
-              'title' => 'Expiring',
-              'value' => ($date_expiring ? $date_expiring->format('Y-M-d H:i') : $a_watch['date_expiring']),
-              'short' => TRUE,
-            ];
-            $attachments[] = [
-              'color' => "#7F8DE1",
-              'fields' => $fields,
-            ];
+          if ($watches['payload']) {
+            foreach ($watches['payload'] as $a_watch) {
+              $fields[] = [
+                'title' => 'Sticker',
+                'value' => $a_watch['sticker_number'] . ' (' . $a_watch['sticker_name'] . ')',
+                'short' => TRUE,
+              ];
+              $date_expiring = \DateTime::createFromFormat('Y-m-d H:i:s.u', $a_watch['date_expiring']);
+              $fields[] = [
+                'title' => 'Expiring',
+                'value' => ($date_expiring ? $date_expiring->format('Y-M-d H:i') : $a_watch['date_expiring']),
+                'short' => TRUE,
+              ];
+              $attachments[] = [
+                'color' => "#7F8DE1",
+                'fields' => $fields,
+              ];
+            }
+            $main_title = 'Watch list (' . count($watches['payload']) . ')';
+          }
+          else {
+            $main_title = 'You do not have currently any watches';
           }
           return [
             'success' => TRUE,
-            'main_title' => 'Watch list',
+            'main_title' => $main_title,
             'slack_attachments' => $attachments,
           ];
           break;
