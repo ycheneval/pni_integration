@@ -1547,7 +1547,7 @@ class PniHelper {
             $query = "UPDATE " . $this->__schema . ".watch  SET date_expiring = NOW() + interval '1 day'"
               . " WHERE id=" . $this->db()->quote($watches[$a_sticker]['id'])
               . " RETURNING date_expiring";
-            $title_attachment = 'Update';
+            $attachment_title = 'Update';
             $attachment_value = 'Watch has been extended';
           }
           else {
@@ -1561,6 +1561,8 @@ class PniHelper {
           }
 
           $result = $this->db()->exec($query);
+          // Update watches
+          $watches = $this->getWatchByPlayer($player_id);
           // Insert the result in the return data
           $fields = [];
           $fields[] = [
@@ -1568,10 +1570,16 @@ class PniHelper {
             'value' => $attachment_value,
             'short' => TRUE,
           ];
+          $date_expiring = \DateTime::createFromFormat('Y-m-d H:i:s.u', $watches[$a_sticker]['date_expiring']);
           $fields[] = [
             'title' => 'Expiring',
-            'value' => 'Watch expiring on ' . print_r($result, TRUE),
+            'value' => ($date_expiring ? $date_expiring->format('Y-M-d H:i') : $watches[$a_sticker]['date_expiring']),
             'short' => TRUE,
+          ];
+          $fields[] = [
+            'title' => 'Sticker',
+            'value' => $a_watch['sticker_number'] . ' (' . $a_watch['sticker_name'] . ')',
+            'short' => FALSE,
           ];
           $attachments[] = [
             'color' => "#7F8DE1",
@@ -1593,7 +1601,7 @@ class PniHelper {
           $fields = [];
           $fields[] = [
             'title' => 'Remove',
-            'value' => 'The existing watch for sticker ' . $a_sticker . ' has been removed',
+            'value' => 'The existing watch for sticker ' . $watches[$a_sticker]['sticker_number'] . ' has been removed',
             'short' => FALSE,
           ];
           $attachments[] = [
