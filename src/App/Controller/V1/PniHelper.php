@@ -1647,6 +1647,7 @@ class PniHelper {
    */
   public function watch($player_id, $album_id, $params) {
     $this->wd->watchdog('watch', 'Trying to process @p for album @a and player @p', ['@p' => $params, '@a' => $album_id, '@p' => $player_id]);
+    $all_stickers = $this->getStickersByAlbum($album_id);
 
     $feature_enabled =  $_ENV['SLACK_BOT_ENABLED'];
     $watches = $this->getWatchByPlayer($player_id);
@@ -1661,6 +1662,7 @@ class PniHelper {
           $attachments = [];
           if ($watches['payload']) {
             foreach ($watches['payload'] as $a_watch) {
+              $fields = [];
               $fields[] = [
                 'title' => 'Sticker',
                 'value' => $a_watch['sticker_number'] . ' (' . $a_watch['sticker_name'] . ')',
