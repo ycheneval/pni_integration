@@ -1706,7 +1706,7 @@ class PniHelper {
 
         default:
           // This is the list of stickers to process
-          $stickers = $this->decodeStickers($all_stickers, $stickers_input);
+          $stickers = $this->decodeStickers($all_stickers, $an_action);
           $this->wd->watchdog('watch', 'For player @p, got action @a for stickers @s', ['@p' => $player_id, '@a' => $cur_action, '@s' => print_r($stickers, TRUE)]);
           return $this->processWatchAction($watches['payload'], $player_id, $cur_action, $stickers);
           break;
