@@ -1672,7 +1672,7 @@ class PniHelper {
     $watches = $this->getWatchByPlayer($player_id);
     $this->wd->watchdog('watch', 'For player @p, got watches @w', ['@p' => $player_id, '@w' => print_r($watches, TRUE)]);
 
-    $actions = \explode(' ', $params);
+    $actions = \explode(' ', trim($params));
     $cur_action = (empty($actions) ? 'list' : 'add');
     foreach ($actions as $an_action) {
       switch ($an_action) {
