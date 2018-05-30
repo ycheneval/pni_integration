@@ -1674,7 +1674,7 @@ class PniHelper {
 
     $actions = \explode(' ', trim($params));
     $cur_action = (0 == count($actions) ? 'list' : 'add');
-    $this->wd->watchdog('watch', 'Default action $da: ', ['@da' => $cur_action, '@a' => print_r($actions, TRUE)]);
+    $this->wd->watchdog('watch', 'Default action @da: @a', ['@da' => $cur_action, '@a' => print_r($actions, TRUE)]);
     foreach ($actions as $an_action) {
       switch ($an_action) {
         case 'list':
