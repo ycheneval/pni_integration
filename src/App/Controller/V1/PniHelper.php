@@ -1544,7 +1544,7 @@ class PniHelper {
           // First check if we have the watch already
           if (array_key_exists($a_sticker, $watches)) {
             // Extend the watch for another time
-            $query = "UPDATE " . $this->__schema . ".watch  SET date_expiring = NOW() + interval '1 day'"
+            $query = "UPDATE " . $this->__schema . ".watch  SET date_expiring = NOW() + interval '7 day'"
               . " WHERE id=" . $this->db()->quote($watches[$a_sticker]['id'])
               . " RETURNING date_expiring";
             $attachment_title = 'Update';
@@ -1554,7 +1554,7 @@ class PniHelper {
             // Insert the new watch in the list
             $query = "INSERT INTO " . $this->__schema . ".watch (player_id, sticker_id, date_expiring)"
               . " VALUES "
-              . " (" . $this->db()->quote($player_id) . ", " . $a_sticker . ", NOW() + interval '1 day'" . ")"
+              . " (" . $this->db()->quote($player_id) . ", " . $a_sticker . ", NOW() + interval '7 day'" . ")"
               . " RETURNING date_expiring";
             $attachment_title = 'Add';
             $attachment_value = 'A new watch has been added';
