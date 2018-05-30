@@ -1673,7 +1673,7 @@ class PniHelper {
     $this->wd->watchdog('watch', 'For player @p, got watches @w', ['@p' => $player_id, '@w' => print_r($watches, TRUE)]);
 
     $actions = \explode(' ', trim($params));
-    $cur_action = (0 == count($actions) ? 'list' : 'add');
+    $cur_action = (empty($actions) || empty($actions[0]) ? 'list' : 'add');
     $this->wd->watchdog('watch', 'Default action @da: @a', ['@da' => $cur_action, '@a' => print_r($actions, TRUE)]);
     foreach ($actions as $an_action) {
       switch ($an_action) {
