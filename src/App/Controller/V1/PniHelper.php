@@ -1545,10 +1545,10 @@ class PniHelper {
           if (array_key_exists($a_sticker, $watches)) {
             // Extend the watch for another time
             $query = "UPDATE " . $this->__schema . ".watch  SET date_expiring = NOW() + interval '1 day'"
-              . " WHERE wid=" . $this->db()->quote($watches[$a_sticker]['id'])
+              . " WHERE id=" . $this->db()->quote($watches[$a_sticker]['id'])
               . " RETURNING date_expiring";
             $title_attachment = 'Update';
-            $attachment_value = 'The watch for sticker ' . $a_sticker . ' has been extended';
+            $attachment_value = 'Watch has been extended';
           }
           else {
             // Insert the new watch in the list
@@ -1557,7 +1557,7 @@ class PniHelper {
               . " (" . $this->db()->quote($player_id) . ", " . $a_sticker . ", NOW() + interval '1 day'" . ")"
               . " RETURNING date_expiring";
             $attachment_title = 'Add';
-            $attachment_value = 'A new watch for sticker ' . $a_sticker . ' has been added';
+            $attachment_value = 'A new watch has been added';
           }
 
           $result = $this->db()->exec($query);
