@@ -1562,29 +1562,32 @@ class PniHelper {
 
           $result = $this->db()->exec($query);
           // Update watches
-          $watches = $this->getWatchByPlayer($player_id);
-          // Insert the result in the return data
-          $fields = [];
-          $fields[] = [
-            'title' => $attachment_title,
-            'value' => $attachment_value,
-            'short' => TRUE,
-          ];
-          $date_expiring = \DateTime::createFromFormat('Y-m-d H:i:s.u', $watches[$a_sticker]['date_expiring']);
-          $fields[] = [
-            'title' => 'Expiring',
-            'value' => ($date_expiring ? $date_expiring->format('Y-M-d H:i') : $watches[$a_sticker]['date_expiring']),
-            'short' => TRUE,
-          ];
-          $fields[] = [
-            'title' => 'Sticker',
-            'value' => $a_watch['sticker_number'] . ' (' . $a_watch['sticker_name'] . ')',
-            'short' => FALSE,
-          ];
-          $attachments[] = [
-            'color' => "#7F8DE1",
-            'fields' => $fields,
-          ];
+          $watches_info = $this->getWatchByPlayer($player_id);
+          if ($watches_info['success']) {
+            $watches = $watches_info['payload'];
+            // Insert the result in the return data
+            $fields = [];
+            $fields[] = [
+              'title' => $attachment_title,
+              'value' => $attachment_value,
+              'short' => TRUE,
+            ];
+            $date_expiring = \DateTime::createFromFormat('Y-m-d H:i:s.u', $watches[$a_sticker]['date_expiring']);
+            $fields[] = [
+              'title' => 'Expiring',
+              'value' => ($date_expiring ? $date_expiring->format('Y-M-d H:i') : $watches[$a_sticker]['date_expiring']),
+              'short' => TRUE,
+            ];
+            $fields[] = [
+              'title' => 'Sticker',
+              'value' => $watches[$a_sticker]['sticker_number'] . ' (' . $watches[$a_sticker]['sticker_name'] . ')',
+              'short' => FALSE,
+            ];
+            $attachments[] = [
+              'color' => "#7F8DE1",
+              'fields' => $fields,
+            ];
+          }
           $cur_watch_nb++;
         }
         break;
