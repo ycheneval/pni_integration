@@ -1543,21 +1543,29 @@ class PniHelper {
           }
           // First check if we have the watch already
           if (array_key_exists($a_sticker, $watches)) {
-            // Nothing to do
-            continue;
+            // Extend the watch for another time
+            $query = "UPDATE " . $this->__schema . ".watch  SET date_expiring = NOW() + interval '1 day'"
+              . " WHERE wid=" . $this->db()->quote($watches[$a_sticker]['id'])
+              . " RETURNING date_expiring";
+            $title_attachment = 'Update';
+            $attachment_value = 'The watch for sticker ' . $a_sticker . ' has been extended';
           }
-          // Insert the new watch in the list
-          $query = "INSERT INTO " . $this->__schema . ".watch (player_id, sticker_id, date_expiring)"
-            . " VALUES "
-            . " (" . $this->db()->quote($player_id) . ", " . $a_sticker . ", NOW() + interval '1 day'" . ")"
-            . " RETURNING date_expiring";
+          else {
+            // Insert the new watch in the list
+            $query = "INSERT INTO " . $this->__schema . ".watch (player_id, sticker_id, date_expiring)"
+              . " VALUES "
+              . " (" . $this->db()->quote($player_id) . ", " . $a_sticker . ", NOW() + interval '1 day'" . ")"
+              . " RETURNING date_expiring";
+            $attachment_title = 'Add';
+            $attachment_value = 'A new watch for sticker ' . $a_sticker . ' has been added';
+          }
 
           $result = $this->db()->exec($query);
           // Insert the result in the return data
           $fields = [];
           $fields[] = [
-            'title' => 'Add',
-            'value' => 'A new watch for sticker ' . $a_sticker . ' has been added',
+            'title' => $attachment_title,
+            'value' => $attachment_value,
             'short' => TRUE,
           ];
           $fields[] = [
@@ -1699,6 +1707,7 @@ class PniHelper {
         default:
           // This is the list of stickers to process
           $stickers = $this->decodeStickers($all_stickers, $stickers_input);
+          $this->wd->watchdog('watch', 'For player @p, got action @a for stickers @s', ['@p' => $player_id, '@a' => $cur_action, '@s' => print_r($stickers, TRUE)]);
           return $this->processWatchAction($watches['payload'], $player_id, $cur_action, $stickers);
           break;
       }
