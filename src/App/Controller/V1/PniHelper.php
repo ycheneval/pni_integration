@@ -855,6 +855,7 @@ class PniHelper {
         $query = "UPDATE " . $this->__schema . ".player_sticker SET trading_capacity = trading_capacity+1 WHERE sticker_id IN (" . \implode(',', current($a_sticker_operation)) . ")"
           . " AND player_id = " . $this->db()->quote($player_id);
         $this->wd->watchdog('totrade', 'Query to execute: @q', ['@q' => $query]);
+//        $this->checkWatch($player_id, current($a_sticker_operation));
         $result = $this->db()->exec($query);
       }
 
@@ -1144,7 +1145,7 @@ class PniHelper {
           foreach ($available_at_other as $a_sticker_available) {
             $count_sticker_available = count(\explode(',', $a_sticker_available['stickers']));
             $an_attachment = [
-              'title' => $a_sticker_available['nick'] . ' to you: ' . $count_sticker_available,
+              'title' => $player_nick . ' to you: ' . $count_sticker_available,
               'value' => 'You can get ' . $a_sticker_available['stickers'] . ' from him',
               'short' => FALSE,
             ];
@@ -1171,7 +1172,7 @@ class PniHelper {
           foreach ($available_at_own as $a_sticker_available) {
             $count_sticker_available = count(\explode(',', $a_sticker_available['stickers']));
             $an_attachment = [
-              'title' => 'You to ' . $a_sticker_available['nick'] . ': ' . $count_sticker_available,
+              'title' => 'You to ' . $player_nick . ': ' . $count_sticker_available,
               'value' => 'You can give him ' . $a_sticker_available['stickers'],
               'short' => FALSE,
             ];
@@ -1258,6 +1259,13 @@ class PniHelper {
 //      echo 'Stickers sorted ' . print_r($stickers, TRUE);
       foreach ($stickers as $a_sticker) {
         if ((0 == intval($a_sticker)) && ($a_sticker != '0')) {
+          if (!is_null($current_interval['start'])) {
+            $intervals[] = $current_interval;
+            $current_interval = [
+              'start' => NULL,
+              'stop' => NULL,
+            ];
+          }
           $intervals[] = [
             'start' => $a_sticker,
             'stop' => $a_sticker,
@@ -1265,12 +1273,12 @@ class PniHelper {
           continue;
         }
         $cur_sticker = intval($a_sticker);
-        if ($current_interval['stop'] && ($current_interval['stop'] === ($cur_sticker - 1))) {
+        if (!is_null($current_interval['stop']) && ($current_interval['stop'] === ($cur_sticker - 1))) {
           $current_interval['stop'] = $cur_sticker;
         }
         else {
           // Start or End of the interval
-          if (!$current_interval['start']) {
+          if (is_null($current_interval['start'])) {
             $current_interval['start'] = $cur_sticker;
             $current_interval['stop'] = $cur_sticker;
           }
@@ -1281,7 +1289,9 @@ class PniHelper {
           }
         }
       }
-      $intervals[] = $current_interval;
+      if (!is_null($current_interval['start'])) {
+        $intervals[] = $current_interval;
+      }
 //      echo 'Intervals ' . print_r($intervals, TRUE);
       // Now we should have all intervals, output them
       $result_array = [];
@@ -1598,27 +1608,28 @@ class PniHelper {
    * @param type $player_id
    * @param type $sticker_id
    */
-  protected function checkWatch($player_id, $sticker_id) {
-    $sticker_info = $this->getStickerById($sticker_id);
-    if ($sticker_info['success']) {
-      $watches = $this->getWatchBySticker($sticker_id);
-      foreach ($watches as $a_watch) {
-        $player_info = $this->getPlayer($a_wathc['player_id']);
-        if ($player_info['success']) {
-          $dest_player_id = $player_info['payload']['id'];
-          $dest_player_nick = $player_info['payload']['nick'];
-          $dest_player_external_id = $player_info['payload']['external_id'];
-          $dest_player_name =
-          $msg = strtr('The sticker @sident (@sn) is now for trade by player @pn', [
-            '@sident' => $sticker_info['payload']['ident'],
-            '@sn' => $sticker_info['payload']['name'],
-            '@pn' => $dest_player_nick]);
-          if ($this->sendEphemeralMsgToPlayer($msg, $dest_player_external_id)) {
-            $query = "INSERT INTO " . $this->__schema . ".watch_notification (watch_id, msg, vector)"
-              . " VALUES "
-              . "(" . $a_watch['id'] . ", " . $this->db()->quote($msg) . ", " . "'slack_bot'" . ")";
-            $this->db()->exec($query);
-            $this->watch_expire($a_watch['id']);
+  protected function checkWatch($player_id, $stickers) {
+    foreach ($stickers as $a_sticker) {
+      $sticker_info = $this->getStickerById($a_sticker);
+      if ($sticker_info['success']) {
+        $watches = $this->getWatchBySticker($a_sticker);
+        foreach ($watches as $a_watch) {
+          $player_info = $this->getPlayer($a_watch['player_id']);
+          if ($player_info['success']) {
+            $dest_player_id = $player_info['payload']['id'];
+            $dest_player_nick = $player_info['payload']['nick'];
+            $dest_player_external_id = $player_info['payload']['external_id'];
+            $msg = strtr('The sticker @sident (@sn) is now for trade by player @pn', [
+              '@sident' => $sticker_info['payload']['ident'],
+              '@sn' => $sticker_info['payload']['name'],
+              '@pn' => $dest_player_nick]);
+            if ($this->sendEphemeralMsgToPlayer($msg, $dest_player_external_id)) {
+              $query = "INSERT INTO " . $this->__schema . ".watch_notification (watch_id, msg, vector)"
+                . " VALUES "
+                . "(" . $a_watch['id'] . ", " . $this->db()->quote($msg) . ", " . "'slack_bot'" . ")";
+              $this->db()->exec($query);
+              $this->watch_expire($a_watch['id']);
+            }
           }
         }
       }
