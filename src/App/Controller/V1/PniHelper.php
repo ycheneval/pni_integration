@@ -448,7 +448,7 @@ class PniHelper {
    * @param type $album_id
    * @return type
    */
-  public function getPlayerStickers($player_id, $album_id) {
+  public function getPlayerStickers($player_id, $album_id, $options = []) {
     $query = "SELECT
                 st.id,
                 st.ident,
@@ -458,6 +458,9 @@ class PniHelper {
             INNER JOIN " . $this->__schema . ".sticker st ON ps.sticker_id = st.id
             WHERE ps.player_id = " . $this->db()->quote($player_id)
             . " AND st.album_id = " . $this->db()->quote($album_id);
+    foreach ($options as $an_option) {
+      $query .= " AND " . $an_option;
+    }
     $data = $this->db()->getCollection($query);
     if ($data) {
       $sticker_keys = array_map(function($an_object) { return $an_object['id']; }, $data);
@@ -909,30 +912,26 @@ class PniHelper {
     $s_array = \explode(' ', $stickers);
 
     // Setup some variables
-    $stickers_operations = [];
+    $stickers_list = [];
 
+    $msg = [
+      'success' => FALSE,
+    ];
     foreach ($s_array as $s_arr_value) {
-      switch ($s_arr_value) {
-        default:
-          // Ok so this is the list of stickers. Find'em all!
-          $this->wd->watchdog('traded', 'Default case, trying to find stickers for: @s', ['@s' => $s_arr_value]);
-          $input_stickers = $this->decodeStickers($all_stickers, $s_arr_value);
-          $key = 'traded';
-          $this->wd->watchdog('traded', 'Operation @k, decoded stickers: @s', ['@k' => $key, '@s' => print_r($input_stickers, TRUE)]);
-          $stickers_operations[] = [$key => $input_stickers];
-          break;
-      }
+      // Ok so this is the list of stickers. Find'em all!
+      $this->wd->watchdog('traded', 'Default case, trying to find stickers for: @s', ['@s' => $s_arr_value]);
+      $input_stickers = $this->decodeStickers($all_stickers, $s_arr_value);
+      $stickers_list += $input_stickers;
     }
-    $this->wd->watchdog('traded', 'Found result_stickers: @rs', ['@rs' => print_r($result_stickers, TRUE)]);
+    $this->wd->watchdog('traded', 'Found result_stickers: @rs', ['@rs' => count($stickers_list)]);
 
-    // Now we should have in $result_stickers the list of things to do
-    // in to_add or to_remove
-    if (!empty($stickers_operations)) {
-      foreach ($stickers_operations as $a_sticker_operation) {
-        if (empty(current($a_sticker_operation))) {
-          continue;
-        }
-        $query = "UPDATE " . $this->__schema . ".player_sticker SET trading_capacity = GREATEST(0, trading_capacity - 1) WHERE sticker_id IN (" . \implode(',', current($a_sticker_operation)) . ")"
+    // Only take into account the stickers which are in the totrade
+    $to_trade = $this->getPlayerStickers($player_id, $album_id, ["ps.trading_capacity > 0"]);
+    if ($to_trade['success']) {
+      $stickers_list = array_intersect($stickers_list, $to_trade['payload']);
+      // Now we should have in $stickers_list the list of stickers to trade
+      if (!empty($stickers_list)) {
+        $query = "UPDATE " . $this->__schema . ".player_sticker SET trading_capacity = GREATEST(0, trading_capacity - 1) WHERE sticker_id IN (" . \implode(',', $stickers_list) . ")"
           . " AND player_id = " . $this->db()->quote($player_id);
         $this->wd->watchdog('traded', 'Query to execute: @q', ['@q' => $query]);
         $result = $this->db()->exec($query);
@@ -940,21 +939,26 @@ class PniHelper {
         $query = "INSERT INTO " . $this->__schema . ".traded_log (player_id, album_id, sticker_id) "
           . " VALUES ";
         $first_row = TRUE;
-        foreach (current($a_sticker_operation) as $a_sticker_traded) {
+        foreach ($stickers_list as $a_sticker_traded) {
           $query .= (!$first_row ? "," : "") . "(" . $player_id . ", " . $album_id . ", " . $a_sticker_traded . ")";
           $first_row = FALSE;
         }
         $query .= ';';
         $this->wd->watchdog('traded', 'Log Query to execute: @q', ['@q' => $query]);
         $result = $this->db()->exec($query);
+        return [
+          'success' => TRUE,
+          'msg' => count($stickers_list) . ' stickers have been removed from to trade list',
+          'slack_attachments' => NULL,
+        ];
       }
-
       return [
         'success' => TRUE,
-        'msg' => 'Stickers traded have been updated for your album',
+        'msg' => 'There was no stickers matching from your to trade list',
         'slack_attachments' => NULL,
       ];
     }
+
     return [
       'success' => FALSE,
       'msg' => 'There was an error processing your command, please review the syntax',
@@ -978,7 +982,7 @@ class PniHelper {
     if (empty($wanted_stickers)) {
       return NULL;
     }
-    $query = "SELECT pl.nick, string_agg(st.ident::character varying, ',') as stickers "
+    $query = "SELECT pl.nick, st.ident "
       . " FROM " . $this->__schema . ".player_sticker ps "
       . " INNER JOIN " . $this->__schema . ".player pl ON ps.player_id = pl.id "
       . " INNER JOIN " . $this->__schema . ".sticker st ON ps.sticker_id = st.id "
@@ -987,9 +991,24 @@ class PniHelper {
       . " AND ps.trading_capacity > 0 "
       . ($excluded_player_id ? " AND ps.player_id != " . $this->db()->quote($excluded_player_id) : "")
       . ($only_player_id ? " AND ps.player_id = " . $this->db()->quote($only_player_id) : "")
-      . " GROUP BY pl.nick ";
+      . " ORDER BY pl.nick, st.ident ";
+//    $query = "SELECT pl.nick, string_agg(st.ident::character varying, ',') as stickers "
+//      . " FROM " . $this->__schema . ".player_sticker ps "
+//      . " INNER JOIN " . $this->__schema . ".player pl ON ps.player_id = pl.id "
+//      . " INNER JOIN " . $this->__schema . ".sticker st ON ps.sticker_id = st.id "
+//      . " WHERE ps.sticker_id IN (" . \implode(',', $wanted_stickers) . ") "
+//      . " AND st.album_id = " . $album_id
+//      . " AND ps.trading_capacity > 0 "
+//      . ($excluded_player_id ? " AND ps.player_id != " . $this->db()->quote($excluded_player_id) : "")
+//      . ($only_player_id ? " AND ps.player_id = " . $this->db()->quote($only_player_id) : "")
+//      . " GROUP BY pl.nick ";
     $this->wd->watchdog('getStickersAvailableForPlayerMatching', 'Query to execute: @q', ['@q' => $query]);
-    $stickers_available = $this->db()->getCollection($query);
+    $stickers_available_raw = $this->db()->getCollection($query);
+    // Build the correct array
+    $stickers_available = [];
+    foreach ($stickers_available_raw as $a_sticker) {
+        $stickers_available[$a_sticker['nick']][] = $a_sticker['ident'];
+    }
     return $stickers_available;
   }
 
@@ -1055,7 +1074,7 @@ class PniHelper {
       foreach ($stickers_operations as $a_sticker_operation) {
         $stickers_available = $this->getStickersAvailableForPlayerMatching(current($a_sticker_operation), $album_id, $player_id);
         // Now get attachments to display the data
-        foreach ($stickers_available as $a_sticker_available) {
+        foreach ($stickers_available as $player_nick => $stickers_available) {
 //          $an_attachment = new \stdClass;
 //          $an_attachment->title = 'Player';
 //          $an_attachment->value = 'You can trade ' . $a_sticker_available['stickers'] . ' with ' . $a_sticker_available['nick'];
@@ -1066,7 +1085,7 @@ class PniHelper {
           }
           $an_attachment = [
             'title' => 'Trading opportunity:',
-            'value' => 'You can trade ' . $a_sticker_available['stickers'] . ' with ' . $a_sticker_available['nick'],
+            'value' => 'You can trade ' . \implode(',', $stickers_available) . ' with ' . $player_nick,
             'short' => FALSE
           ];
           $attachments[] = [
@@ -1142,11 +1161,11 @@ class PniHelper {
         // Start with the stickers the other player has that we need
         $available_at_other = $this->getStickersAvailableForPlayerMatching($missing_own, $album_id, NULL, $other_player_id);
         if ($available_at_other) {
-          foreach ($available_at_other as $a_sticker_available) {
-            $count_sticker_available = count(\explode(',', $a_sticker_available['stickers']));
+          foreach ($available_at_other as $player_available_nick => $stickers_available) {
+            $count_sticker_available = count($stickers_available);
             $an_attachment = [
               'title' => $player_nick . ' to you: ' . $count_sticker_available,
-              'value' => 'You can get ' . $a_sticker_available['stickers'] . ' from him',
+              'value' => 'You can get ' . \implode(',', $stickers_available) . ' from him',
               'short' => FALSE,
             ];
             $attachments[] = [
@@ -1169,11 +1188,11 @@ class PniHelper {
         }
         $available_at_own = $this->getStickersAvailableForPlayerMatching($missing_other, $album_id, NULL, $player_id);
         if ($available_at_own) {
-          foreach ($available_at_own as $a_sticker_available) {
-            $count_sticker_available = count(\explode(',', $a_sticker_available['stickers']));
+          foreach ($available_at_own as $player_available_nick => $stickers_available) {
+            $count_sticker_available = count($stickers_available);
             $an_attachment = [
               'title' => 'You to ' . $player_nick . ': ' . $count_sticker_available,
-              'value' => 'You can give him ' . $a_sticker_available['stickers'],
+              'value' => 'You can give him ' . \implode(',', $stickers_available),
               'short' => FALSE,
             ];
             $attachments[] = [
@@ -1432,8 +1451,7 @@ class PniHelper {
     }
     $this->wd->watchdog('sticker', 'Found @c sticker(s) for detailed information', ['@c' => count($stickers_list)]);
 
-    // Now we should have in $result_stickers the list of things to do
-    // in to_add or to_remove
+    // Now we should have in $stickers_list the list of stickers to get info
     if (!empty($stickers_list)) {
       $ma = $this->max_attachments;
       $attachments = [];
