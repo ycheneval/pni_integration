@@ -991,7 +991,7 @@ class PniHelper {
       . " AND ps.trading_capacity > 0 "
       . ($excluded_player_id ? " AND ps.player_id != " . $this->db()->quote($excluded_player_id) : "")
       . ($only_player_id ? " AND ps.player_id = " . $this->db()->quote($only_player_id) : "")
-      . " ORDER BY pl.nick, st.ident ";
+      . " ORDER BY pl.nick, st.id ";
 //    $query = "SELECT pl.nick, string_agg(st.ident::character varying, ',') as stickers "
 //      . " FROM " . $this->__schema . ".player_sticker ps "
 //      . " INNER JOIN " . $this->__schema . ".player pl ON ps.player_id = pl.id "
