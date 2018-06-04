@@ -925,7 +925,7 @@ class PniHelper {
         $query = "UPDATE " . $this->__schema . ".player_sticker SET trading_capacity = trading_capacity+1 WHERE sticker_id IN (" . \implode(',', current($a_sticker_operation)) . ")"
           . " AND player_id = " . $this->db()->quote($player_id);
         $this->wd->watchdog('totrade', 'Query to execute: @q', ['@q' => $query]);
-//        $this->checkWatch($player_id, current($a_sticker_operation));
+        $this->checkWatch($player_id, current($a_sticker_operation));
         $result = $this->db()->exec($query);
       }
 
@@ -1770,7 +1770,6 @@ class PniHelper {
         }
       }
     }
-
   }
 
   /**
