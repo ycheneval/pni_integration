@@ -954,7 +954,7 @@ class PniHelper {
         $query = "UPDATE " . $this->__schema . ".player_sticker SET trading_capacity = trading_capacity+1 WHERE sticker_id IN (" . \implode(',', current($a_sticker_operation)) . ")"
           . " AND player_id = " . $this->db()->quote($player_id);
         $this->wd->watchdog('totrade', 'Query to execute: @q', ['@q' => $query]);
-        $this->checkWatch($player_id, current($a_sticker_operation));
+//        $this->checkWatch($player_id, current($a_sticker_operation));
         $result = $this->db()->exec($query);
       }
 
@@ -1790,6 +1790,7 @@ class PniHelper {
                 '@sident' => $sticker_info['payload']['ident'],
                 '@sn' => $sticker_info['payload']['name'],
                 '@pn' => $dest_player_nick]);
+              $this->wd->watchdog('checkWatch', 'About to send msg @m', ['@m' => $msg]);
               if ($this->sendEphemeralMsgToPlayer($msg, $dest_player_external_id)) {
                 $query = "INSERT INTO " . $this->__schema . ".watch_notification (watch_id, msg, vector)"
                   . " VALUES "
