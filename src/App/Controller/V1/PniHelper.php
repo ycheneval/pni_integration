@@ -1433,7 +1433,7 @@ class PniHelper {
         // Find the number of owned stickers
         $owned_stickers = array_filter($collection_data['payload'], function($an_object) { return $an_object['owned'];});
         $owned_stickers_count = count($owned_stickers);
-        $this->setMissingCount($player_id, $album_id, $total_stickers_count - $owned_stickers_count);
+        $this->setMissingCount($found_player_info['payload']['id'], $album_id, $total_stickers_count - $owned_stickers_count);
         $fields[] = [
           'title' => 'Stickers owned (missing)',
           'value' => $owned_stickers_count . ' (' . ($total_stickers_count - $owned_stickers_count) . ')',
