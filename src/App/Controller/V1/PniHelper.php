@@ -197,6 +197,35 @@ class PniHelper {
    * @param type $ref
    * @return type
    */
+  public function getStickerById($album_id, $id) {
+    $info = [
+      'success' => FALSE,
+    ];
+
+    $query = "SELECT
+                st.id,
+                st.ident,
+                st.name,
+                st.team_album_id,
+                st.url
+            FROM " . $this->__schema . ".sticker st
+            WHERE "
+            . "st.id = " . $this->db()->quote($id);
+    $sticker = $this->db()->getRow($query);
+    if ($sticker) {
+      $info['success'] = TRUE;
+      $info['payload'] = $sticker;
+    }
+    return $info;
+  }
+
+  /**
+   * Find a sticker by its ident
+   *
+   * @param type $album_id
+   * @param type $ref
+   * @return type
+   */
   public function getStickerByIdent($album_id, $ref, $use_like = FALSE) {
     $query = "SELECT
                 st.id,
