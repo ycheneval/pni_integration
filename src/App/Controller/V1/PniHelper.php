@@ -526,6 +526,21 @@ class PniHelper {
   }
 
   /**
+   * Sets the number of missing stickers for quick retrieval
+   *
+   * @param type $player_id
+   * @param type $album_id
+   * @param type $count
+   * @return type
+   */
+  public function setMissingCount($player_id, $album_id, $count) {
+    $query = "UPDATE " . $this->__schema . ".player_album SET missing_count = " . $this->db()->quote($count)
+      . " WHERE player_id = " . $this->db()->quote($player_id)
+      . " AND album_id = " . $this->db()->quote($album_id);
+    return $this->db()->exec($query);
+  }
+
+  /**
    * Check if player exists, if not create it and return data
    *
    * @return type
@@ -819,13 +834,15 @@ class PniHelper {
       if ($collection_data['success']) {
         if ($reverse) {
           // /missing command was input, now returns the list of missing stickers
-          // Find the missing stickers stickers
+          // Find the missing stickers
           $missing_stickers = array_filter($collection_data['payload'], function($an_object) { return !$an_object['owned']; });
           $result_stickers_ident = array_map(function($a_value) { return $a_value['ident']; }, $missing_stickers);
+          $this->setMissingCount($player_id, $album_id, count($result_stickers_ident));
         }
         else {
           $owned_stickers = array_filter($collection_data['payload'], function($an_object) { return $an_object['owned']; });
           $result_stickers_ident = array_map(function($a_value) { return $a_value['ident']; }, $owned_stickers);
+          $this->setMissingCount($player_id, $album_id, count($all_stickers['payload']) - count($result_stickers_ident));
         }
         $slack_attachments[] = [
           'color' => "#7F8DE1",
@@ -1416,6 +1433,7 @@ class PniHelper {
         // Find the number of owned stickers
         $owned_stickers = array_filter($collection_data['payload'], function($an_object) { return $an_object['owned'];});
         $owned_stickers_count = count($owned_stickers);
+        $this->setMissingCount($player_id, $album_id, $total_stickers_count - $owned_stickers_count);
         $fields[] = [
           'title' => 'Stickers owned (missing)',
           'value' => $owned_stickers_count . ' (' . ($total_stickers_count - $owned_stickers_count) . ')',
