@@ -607,7 +607,7 @@ class PniHelper {
    * @param type $player_id
    * @param type $album_id
    */
-  public function linkPlayerAlbum($player_id, $album_id) {
+  public function linkPlayerAlbum($player_id, $album_id, $missing_count = 0) {
     // We need to add all stickers from $album_id. We need first to check if we have data
     $query = "SELECT plal.player_id, plal.album_id
             FROM " . $this->__schema . ".player_album plal
@@ -641,6 +641,7 @@ class PniHelper {
 
       case 'UPDATE':
         // In this case, we need to reset all stickers data
+        $all_stickers = $this->getStickersByAlbum($album_id);
         $query = "UPDATE " . $this->__schema . ".player_sticker ps
           SET owned = FALSE, trading_capacity = 0
           WHERE ps.player_id = " . $this->db()->quote($player_id)
@@ -649,6 +650,13 @@ class PniHelper {
           . " )";
         $result = $this->db()->exec($query);
         $this->wd->watchdog('linkPlayerAlbum', 'Operation @o, result as @r', ['@o' => $operation, '@r' => print_r($result, TRUE)]);
+        if ($all_stickers['success']) {
+          $query = "UPDATE " . $this->__schema . ".player_album
+            SET missing_count = " . count($all_stickers['payload'])
+            . " WHERE player_id = " . $this->db()->quote($player_id)
+            . " AND album_id = " . $this->db()->quote($album_id);
+          $result = $this->db()->exec($query);
+        }
         break;
 
       case 'INSERT':
@@ -658,8 +666,8 @@ class PniHelper {
         $result = $this->db()->exec($query);
         $this->wd->watchdog('linkPlayerAlbum', 'Operation @o, result as @r', ['@o' => $operation, '@r' => print_r($result, TRUE)]);
         // Now make sure there is data in the player_album table
-        $query = "INSERT INTO " . $this->__schema . ".player_album (player_id, album_id)
-          VALUES ( " . $player_id . ', ' . $album_id
+        $query = "INSERT INTO " . $this->__schema . ".player_album (player_id, album_id, missing_count)
+          VALUES ( " . $player_id . ', ' . $album_id . ', ' . $missing_count
           . " )";
         $result = $this->db()->exec($query);
         break;
@@ -1389,18 +1397,6 @@ class PniHelper {
   }
 
   /**
-   * Return the list of players that are on the same album than you
-   *
-   * @param type $player_id
-   * @param type $album_id
-   * @param type $player_name
-   * @return string
-   */
-  public function players($player_id, $album_id) {
-
-  }
-
-  /**
    * Get back some stats on the user
    *
    * @param type $player_id
@@ -1587,8 +1583,8 @@ class PniHelper {
       foreach ($players_album['payload'] as $a_player_album) {
         $fields = [];
         $fields[] = [
-          'title' => 'Player',
-          'value' => $a_player_album['nick'] . ' has currently ' . $a_player_album['missing_count'] . ' sticker' . ($a_player_album['missing_count'] > 1 ? 's' : ''),
+          'title' => 'Player' . $a_player_album['nick'] . ' is missing ' . $a_player_album['missing_count'] . ' sticker' . ($a_player_album['missing_count'] > 1 ? 's' : ''),
+          'value' => NULL,
           'short' => FALSE,
         ];
         $attachments[] = [
