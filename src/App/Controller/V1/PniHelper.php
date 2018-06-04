@@ -484,6 +484,48 @@ class PniHelper {
   }
 
   /**
+   * Return player that are trading stickers in $album_id
+   *
+   * @param type $player_id
+   * @param type $album_id
+   * @return type
+   */
+  public function getPlayersByAlbum($album_id, $options = []) {
+    $query = "SELECT
+                pl.nick,
+                pa.missing_count
+            FROM " . $this->__schema . ".player_album pa
+            INNER JOIN " . $this->__schema . ".album al ON pa.album_id = al.id
+            INNER JOIN " . $this->__schema . ".player pl ON pa.player_id = pl.id
+//            INNER JOIN " . $this->__schema . ".player_sitcker ps ON pa.player_id = ps.player_id
+//            INNER JOIN " . $this->__schema . ".sticker st ON ps.sticker_id = st.id
+            WHERE pa.album_id = " . $this->db()->quote($album_id)
+            . " ORDER BY pl.nick";
+    foreach ($options as $an_option) {
+      $query .= " AND " . $an_option;
+    }
+    $data = $this->db()->getCollection($query);
+    if ($data) {
+      $album_info = $this->getAlbumById($album_id);
+      $album_name = ($album_info['success'] ? $album_info['payload']['name'] : '');
+      return [
+        'success' => TRUE,
+        'album_id' => $album_id,
+        'album_name' => $album_name,
+        'payload' => $data,
+      ];
+    }
+    else {
+      return [
+        'success' => FALSE,
+        'album_id' => NULL,
+        'album_id' => NULL,
+        'payload' => NULL,
+      ];
+    }
+  }
+
+  /**
    * Check if player exists, if not create it and return data
    *
    * @return type
@@ -1415,7 +1457,7 @@ class PniHelper {
   }
 
 
-    /**
+  /**
    * Indicate which stickers you have traded
    *
    */
@@ -1495,6 +1537,51 @@ class PniHelper {
       }
       $msg['slack_attachments'] = $attachments;
       $msg['main_title'] = count($stickers_list) . " sticker" . (count($attachments) > 1 ? 's' : '') . ' found' . ($ma < count($stickers_list) ? ', only the first ' . $ma. ' are displayed' : '');
+      $msg['success'] = TRUE;
+    }
+
+    return $msg;
+  }
+
+  /**
+   * Lists all player nicknames which are trading the $album_id
+   *
+   */
+  public function player($player_id, $album_id, $options = '') {
+    $this->wd->watchdog('player', 'Trying to process @t for album @a and player @p', ['@t' => $stickers, '@a' => $album_id, '@p' => $player_id]);
+    $all_stickers = $this->getStickersByAlbum($album_id);
+    if (!$all_stickers['success']) {
+      // There are no stickers, return an error
+      return [
+        'success' => FALSE,
+        'error_message' => 'We cannot find stickers for this album!',
+      ];
+    }
+    $this->wd->watchdog('player', 'All Stickers found: @c', ['@c' => count($all_stickers['payload'])]);
+
+    $players_album = $this->getPlayersByAlbum($album_id);
+
+    $msg = [
+      'success' => FALSE,
+    ];
+    if ($players_album['success']) {
+      $attachments = [];
+      foreach ($players_album as $a_player_album) {
+        $fields = [];
+        $attachments = [];
+  //        $this->wd->watchdog('sticker', 'For sticker @s, found info @i', ['@s' => $a_sticker, '@i' => print_r($all_stickers['payload'][$a_sticker], TRUE)]);
+        $fields[] = [
+          'title' => 'Player',
+          'value' => $a_player_album['nick'] . ' has currently ' . $a_player_album['missing_count'] . ' sticker' . ($a_player_album['missing_count'] > 1 ? 's' : ''),
+          'short' => FALSE,
+        ];
+        $attachments[] = [
+          'color' => "#7F8DE1",
+          'fields' => $fields,
+        ];
+      }
+      $msg['slack_attachments'] = $attachments;
+      $msg['main_title'] = 'Players that are trading stickers for album ' . $players_album['album_name'];
       $msg['success'] = TRUE;
     }
 
