@@ -497,10 +497,10 @@ class PniHelper {
             FROM " . $this->__schema . ".player_album pa
             INNER JOIN " . $this->__schema . ".album al ON pa.album_id = al.id
             INNER JOIN " . $this->__schema . ".player pl ON pa.player_id = pl.id
-//            INNER JOIN " . $this->__schema . ".player_sitcker ps ON pa.player_id = ps.player_id
-//            INNER JOIN " . $this->__schema . ".sticker st ON ps.sticker_id = st.id
             WHERE pa.album_id = " . $this->db()->quote($album_id)
             . " ORDER BY pl.nick";
+//            INNER JOIN " . $this->__schema . ".player_sitcker ps ON pa.player_id = ps.player_id
+//            INNER JOIN " . $this->__schema . ".sticker st ON ps.sticker_id = st.id
     foreach ($options as $an_option) {
       $query .= " AND " . $an_option;
     }
