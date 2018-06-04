@@ -1584,7 +1584,7 @@ class PniHelper {
         $fields = [];
         $fields[] = [
           'title' => NULL,
-          'value' => 'Player ' . $a_player_album['nick'] . ' is missing ' . $a_player_album['missing_count'] . ' sticker' . ($a_player_album['missing_count'] > 1 ? 's' : ''),
+          'value' => $a_player_album['nick'] . ' is missing ' . $a_player_album['missing_count'] . ' sticker' . ($a_player_album['missing_count'] > 1 ? 's' : ''),
           'short' => FALSE,
         ];
         $attachments[] = [
