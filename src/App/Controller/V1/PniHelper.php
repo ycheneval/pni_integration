@@ -1778,23 +1778,25 @@ class PniHelper {
       $sticker_info = $this->getStickerById($a_sticker);
       if ($sticker_info['success']) {
         $watches = $this->getWatchBySticker($a_sticker);
-        foreach ($watches as $a_watch) {
-          $this->wd->watchdog('checkWatch', 'Got a_watch @aw', ['@aw' => print_r($a_watch, TRUE)]);
-          $player_info = $this->getPlayer($a_watch['player_id']);
-          if ($player_info['success']) {
-            $dest_player_id = $player_info['payload']['id'];
-            $dest_player_nick = $player_info['payload']['nick'];
-            $dest_player_external_id = $player_info['payload']['external_id'];
-            $msg = strtr('The sticker @sident (@sn) is now for trade by player @pn', [
-              '@sident' => $sticker_info['payload']['ident'],
-              '@sn' => $sticker_info['payload']['name'],
-              '@pn' => $dest_player_nick]);
-            if ($this->sendEphemeralMsgToPlayer($msg, $dest_player_external_id)) {
-              $query = "INSERT INTO " . $this->__schema . ".watch_notification (watch_id, msg, vector)"
-                . " VALUES "
-                . "(" . $a_watch['id'] . ", " . $this->db()->quote($msg) . ", " . "'slack_bot'" . ")";
-              $this->db()->exec($query);
-              $this->watch_expire($a_watch['id']);
+        if ($watches['success']) {
+          foreach ($watches['payload'] as $a_watch) {
+            $this->wd->watchdog('checkWatch', 'Got a_watch @aw', ['@aw' => print_r($a_watch, TRUE)]);
+            $player_info = $this->getPlayer($a_watch['player_id']);
+            if ($player_info['success']) {
+              $dest_player_id = $player_info['payload']['id'];
+              $dest_player_nick = $player_info['payload']['nick'];
+              $dest_player_external_id = $player_info['payload']['external_id'];
+              $msg = strtr('The sticker @sident (@sn) is now for trade by player @pn', [
+                '@sident' => $sticker_info['payload']['ident'],
+                '@sn' => $sticker_info['payload']['name'],
+                '@pn' => $dest_player_nick]);
+              if ($this->sendEphemeralMsgToPlayer($msg, $dest_player_external_id)) {
+                $query = "INSERT INTO " . $this->__schema . ".watch_notification (watch_id, msg, vector)"
+                  . " VALUES "
+                  . "(" . $a_watch['id'] . ", " . $this->db()->quote($msg) . ", " . "'slack_bot'" . ")";
+                $this->db()->exec($query);
+                $this->watch_expire($a_watch['id']);
+              }
             }
           }
         }
