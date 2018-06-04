@@ -1566,10 +1566,8 @@ class PniHelper {
     ];
     if ($players_album['success']) {
       $attachments = [];
-      foreach ($players_album as $a_player_album) {
+      foreach ($players_album['payload'] as $a_player_album) {
         $fields = [];
-        $attachments = [];
-  //        $this->wd->watchdog('sticker', 'For sticker @s, found info @i', ['@s' => $a_sticker, '@i' => print_r($all_stickers['payload'][$a_sticker], TRUE)]);
         $fields[] = [
           'title' => 'Player',
           'value' => $a_player_album['nick'] . ' has currently ' . $a_player_album['missing_count'] . ' sticker' . ($a_player_album['missing_count'] > 1 ? 's' : ''),
