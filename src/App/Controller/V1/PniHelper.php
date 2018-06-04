@@ -197,7 +197,7 @@ class PniHelper {
    * @param type $ref
    * @return type
    */
-  public function getStickerById($album_id, $id) {
+  public function getStickerById($id) {
     $info = [
       'success' => FALSE,
     ];
