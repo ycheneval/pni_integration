@@ -1779,6 +1779,7 @@ class PniHelper {
       if ($sticker_info['success']) {
         $watches = $this->getWatchBySticker($a_sticker);
         foreach ($watches as $a_watch) {
+          $this->wd->watchdog('checkWatch', 'Got a_watch @aw', ['@aw' => print_r($a_watch, TRUE)]);
           $player_info = $this->getPlayer($a_watch['player_id']);
           if ($player_info['success']) {
             $dest_player_id = $player_info['payload']['id'];
