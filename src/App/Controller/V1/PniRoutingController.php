@@ -47,7 +47,7 @@ class PniRoutingController implements ControllerProviderInterface {
     $controllers->post('/sticker', __NAMESPACE__ . '\PniServicesController::sticker');
 
     //Player command
-    $controllers->post('/sticker', __NAMESPACE__ . '\PniServicesController::player');
+    $controllers->post('/player', __NAMESPACE__ . '\PniServicesController::player');
 
 
 //        $controllers["cors-enabled"]($controllers);
