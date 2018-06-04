@@ -1583,8 +1583,8 @@ class PniHelper {
       foreach ($players_album['payload'] as $a_player_album) {
         $fields = [];
         $fields[] = [
-          'title' => 'Player' . $a_player_album['nick'] . ' is missing ' . $a_player_album['missing_count'] . ' sticker' . ($a_player_album['missing_count'] > 1 ? 's' : ''),
-          'value' => NULL,
+          'title' => NULL,
+          'value' => 'Player ' . $a_player_album['nick'] . ' is missing ' . $a_player_album['missing_count'] . ' sticker' . ($a_player_album['missing_count'] > 1 ? 's' : ''),
           'short' => FALSE,
         ];
         $attachments[] = [
@@ -1593,7 +1593,7 @@ class PniHelper {
         ];
       }
       $msg['slack_attachments'] = $attachments;
-      $msg['main_title'] = 'Players that are trading stickers for album ' . $players_album['album_name'];
+      $msg['main_title'] = 'There are currently ' . count($players_album['payload']) . ' players that are trading stickers for album ' . $players_album['album_name'];
       $msg['success'] = TRUE;
     }
 
