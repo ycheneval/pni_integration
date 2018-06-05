@@ -490,6 +490,7 @@ class PniHelper {
     foreach ($options as $an_option) {
       $query .= " AND " . $an_option;
     }
+    $this->wd->watchdog('getPlayerStickers', 'Query to run: @q', ['@q' => $query]);
     $data = $this->db()->getCollection($query);
     if ($data) {
       $sticker_keys = array_map(function($an_object) { return $an_object['id']; }, $data);
@@ -929,16 +930,25 @@ class PniHelper {
 
     // Setup some variables
     $stickers_operations = [];
+    $operation_key = 'add';
 
     foreach ($s_array as $s_arr_value) {
       switch ($s_arr_value) {
+        case 'remove':
+          $operation_key = 'remove';
+          break;
+
+        case 'add':
+          $operation_key = 'add';
+          break;
+
+
         default:
           // Ok so this is the list of stickers. Find'em all!
           $this->wd->watchdog('totrade', 'Default case, trying to find stickers for: @s', ['@s' => $s_arr_value]);
           $input_stickers = $this->decodeStickers($all_stickers, $s_arr_value);
-          $key = 'to_trade';
-          $this->wd->watchdog('totrade', 'Operation @k, decoded stickers: @s', ['@k' => $key, '@s' => print_r($input_stickers, TRUE)]);
-          $stickers_operations[] = [$key => $input_stickers];
+          $this->wd->watchdog('totrade', 'Operation @k, decoded stickers: @s', ['@k' => $operation_key, '@s' => print_r($input_stickers, TRUE)]);
+          $stickers_operations[] = [$operation_key => $input_stickers];
           break;
       }
     }
@@ -947,15 +957,27 @@ class PniHelper {
     // Now we should have in $result_stickers the list of things to do
     // in to_add or to_remove
     if (!empty($stickers_operations)) {
-      foreach ($stickers_operations as $a_sticker_operation) {
+      foreach ($stickers_operations as $an_operation_key => $a_sticker_operation) {
         if (empty(current($a_sticker_operation))) {
           continue;
         }
-        $query = "UPDATE " . $this->__schema . ".player_sticker SET trading_capacity = trading_capacity+1 WHERE sticker_id IN (" . \implode(',', current($a_sticker_operation)) . ")"
-          . " AND player_id = " . $this->db()->quote($player_id);
-        $this->wd->watchdog('totrade', 'Query to execute: @q', ['@q' => $query]);
-//        $this->checkWatch($player_id, current($a_sticker_operation));
-        $result = $this->db()->exec($query);
+        switch ($an_operation_key) {
+          case 'add':
+            $query = "UPDATE " . $this->__schema . ".player_sticker SET trading_capacity = trading_capacity+1 WHERE sticker_id IN (" . \implode(',', current($a_sticker_operation)) . ")"
+              . " AND player_id = " . $this->db()->quote($player_id);
+            $this->wd->watchdog('totrade', 'Query to execute: @q', ['@q' => $query]);
+//            $this->checkWatch($player_id, current($a_sticker_operation));
+            $result = $this->db()->exec($query);
+            break;
+
+          case 'remove':
+            $query = "UPDATE " . $this->__schema . ".player_sticker SET trading_capacity = GREATEST(0, trading_capacity - 1) WHERE sticker_id IN (" . \implode(',', current($a_sticker_operation)) . ")"
+              . " AND player_id = " . $this->db()->quote($player_id);
+            $this->wd->watchdog('totrade', 'Query to execute: @q', ['@q' => $query]);
+//            $this->checkWatch($player_id, current($a_sticker_operation));
+            $result = $this->db()->exec($query);
+            break;
+        }
       }
 
       $collection_data = $this->getPlayerStickers($player_id, $album_id);
@@ -1023,8 +1045,9 @@ class PniHelper {
 
     // Only take into account the stickers which are in the totrade
     $to_trade = $this->getPlayerStickers($player_id, $album_id, ["ps.trading_capacity > 0"]);
+    $this->wd->watchdog('traded', 'Found totrade stickers: @tt', ['@tt' => print_r($to_trade, TRUE)]);
     if ($to_trade['success']) {
-      $stickers_list = array_intersect($stickers_list, $to_trade['payload']);
+      $stickers_list = array_intersect($stickers_list, array_keys($to_trade['payload']));
       // Now we should have in $stickers_list the list of stickers to trade
       if (!empty($stickers_list)) {
         $query = "UPDATE " . $this->__schema . ".player_sticker SET trading_capacity = GREATEST(0, trading_capacity - 1) WHERE sticker_id IN (" . \implode(',', $stickers_list) . ")"
